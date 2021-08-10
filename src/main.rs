@@ -1,4 +1,4 @@
-extern crate bundler;
+extern crate rust_bundler_cp;
 
 use std::env;
 use std::process;
@@ -9,6 +9,6 @@ fn main() {
         eprintln!("Usage: bundle path/to/project");
         process::exit(1);
     }
-    let code = bundler::bundle(&args[1]);
+    let code = rust_bundler_cp::bundle(&args[1]);
     println!("{}", code);
 }
