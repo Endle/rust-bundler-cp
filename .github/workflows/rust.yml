@@ -36,6 +36,7 @@ jobs:
             ~/.cargo/git
           key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}-build
           restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}-
             ${{ runner.os }}-cargo-${{ matrix.rust }}-
             ${{ runner.os }}-cargo-
 
@@ -87,6 +88,7 @@ jobs:
             ~/.cargo/git
           key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}-release
           restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}-
             ${{ runner.os }}-cargo-${{ matrix.rust }}-
             ${{ runner.os }}-cargo-
 
