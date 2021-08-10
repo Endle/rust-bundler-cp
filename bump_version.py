@@ -23,7 +23,7 @@ def bump_version():
 
 def install_cargo_bump():
     # This step is very slow. Put it here to avoid triggering in non-master branches
-    shell_call("cargo install cargo-bump")
+    subprocess.run("cargo install cargo-bump", shell=True)
 
 
 def main():
@@ -41,9 +41,12 @@ def main():
 
     # Create a commit
     (old_ver, new_ver) = bump_version()
-    new_commit_message = MESSAGE_FLAG + " From {} To {}".format(old_ver, new_ver)
-    git_commit_cmd = "git commit -a -m '{}'".format(new_commit_message)
-    shell_call(git_commit_cmd)
+    version_change_info = " From {} To {}".format(old_ver, new_ver)
+    print(version_change_info)
+
+    new_commit_message = MESSAGE_FLAG + version_change_info
+    git_commit_cmd = "git commit Cargo.toml && git commit  -m '{}'".format(new_commit_message)
+    subprocess.run(git_commit_cmd, shell=True)
 
     commit_log = shell_call("git log --name-status -1")
     print("Created new commit: \n" + commit_log)
