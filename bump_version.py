@@ -45,7 +45,7 @@ def main():
     print(version_change_info)
 
     new_commit_message = MESSAGE_FLAG + version_change_info
-    git_commit_cmd = "git commit Cargo.toml && git commit  -m '{}'".format(new_commit_message)
+    git_commit_cmd = "git add Cargo.toml && git commit  -m '{}'".format(new_commit_message)
     subprocess.run(git_commit_cmd, shell=True)
 
     commit_log = shell_call("git log --name-status -1")
