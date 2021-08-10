@@ -13,7 +13,7 @@ license = "MIT"
 edition = "2018"
 
 [[bin]]
-name = "bundle"
+name = "rust_bundler_cp"
 path = "src/main.rs"
 
 [dependencies]
