@@ -84,6 +84,8 @@ jobs:
         run: cargo bench --verbose
       - name: Install
         run: cargo install --path .
+      - name: Package
+        run: cargo package --verbose
         
         
       - name: Print sccache stats
