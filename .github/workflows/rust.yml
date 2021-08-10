@@ -19,31 +19,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         rust: [stable, 1.49.0, "1.50", 1.51, 1.52]
-        include:
-          - os: ubuntu-latest
-            sccache-path: /home/runner/.cache/sccache
-          - os: macos-latest
-            sccache-path: /Users/runner/Library/Caches/Mozilla.sccache
     steps:
       - uses: actions/checkout@v2
-      - name: Install sccache (ubuntu-latest)
-        if: matrix.os == 'ubuntu-latest'
-        env:
-          LINK: https://github.com/mozilla/sccache/releases/download
-          SCCACHE_VERSION: 0.2.13
-        run: |
-          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
-          mkdir -p $HOME/.local/bin
-          curl -L "$LINK/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
-          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          rm -rf $SCCACHE_FILE
-          echo "If this file is remained, the carge package step would fail due to uncommitted changes" > /dev/null
-      - name: Install sccache (macos-latest)
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew update
-          brew install sccache
       - name: Install Rust ${{ matrix.rust }}
         uses: actions-rs/toolchain@v1
         with:
@@ -57,19 +34,10 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-${{ matrix.rust }}
+          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}-build
           restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.rust }}-
             ${{ runner.os }}-cargo-
-      - name: Save sccache
-        uses: actions/cache@v2
-        continue-on-error: false
-        with:
-          path: ${{ matrix.sccache-path }}
-          key: ${{ runner.os }}-sccache-${{ hashFiles('**/Cargo.toml') }}-${{ matrix.rust }}
-          restore-keys: |
-            ${{ runner.os }}-sccache-
-      - name: Start sccache server
-        run: sccache --start-server
 
 # Real tests starts here
       - name: Check version
@@ -89,11 +57,6 @@ jobs:
       - name: Package
         run: cargo package --verbose
         
-        
-      - name: Print sccache stats
-        run: sccache --show-stats
-      - name: Stop sccache server
-        run: sccache --stop-server || true
 
   coverage:
     runs-on: ubuntu-latest
@@ -124,8 +87,9 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-${{ matrix.rust }}-release
+          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}-release
           restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.rust }}-
             ${{ runner.os }}-cargo-
 
       # End of rust template
