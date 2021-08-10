@@ -48,32 +48,18 @@ More examples in [tests/testdata](https://github.com/slava-sh/rust-bundler/tree/
 
 Install:
 ```sh
-$ cargo install bundler
+$ cargo install rust_bundler_cp
 ```
 
 Run:
 ```sh
-$ bundle path/to/project >output.rs
+$ rust_bundler_cp path/to/project >output.rs
 ```
 
-## Library Usage
 
-```toml
-[dependencies]
-bundler = "0.1"
-```
-
-```rust
-extern crate bundler;
-
-fn main() {
-    let code = bundler::bundle("path/to/project");
-    println!("{}", code);
-}
-```
 
 ## Similar Projects
-
+* This project is based on [slava-sh /rust-bundler](https://github.com/slava-sh/rust-bundler)
 * [lpenz/rust-sourcebundler](https://github.com/lpenz/rust-sourcebundler)
   is based on regular expressions, whereas this project manipulates the syntax tree
 * [MarcosCosmos/cg-rust-bundler](https://github.com/MarcosCosmos/cg-rust-bundler)
