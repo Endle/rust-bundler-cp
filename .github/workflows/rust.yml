@@ -86,10 +86,10 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}-release
+          key: ${{ runner.os }}-cargo-stable-${{ hashFiles('**/Cargo.toml') }}-release
           restore-keys: |
-            ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}-
-            ${{ runner.os }}-cargo-${{ matrix.rust }}-
+            ${{ runner.os }}-cargo-stable-${{ hashFiles('**/Cargo.toml') }}-
+            ${{ runner.os }}-cargo-stable-
             ${{ runner.os }}-cargo-
 
       # End of rust template
