@@ -50,8 +50,6 @@ jobs:
         run: cargo build --verbose
       - name: Run tests
         run: cargo test --verbose
-      - name: Bench
-        run: cargo bench --verbose
       - name: Install
         run: cargo install --path .
       - name: Package
