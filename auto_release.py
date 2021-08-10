@@ -42,5 +42,8 @@ def main():
     commit_log = shell_call("git log --name-status -1")
     print("Created new commit: \n" + commit_log)
 
+    with open("created_new_commit.success", "w") as fout:
+        fout.write(commit_log)
+
 
 main()
