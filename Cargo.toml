@@ -12,10 +12,6 @@ readme = "README.md"
 license = "MIT"
 edition = "2018"
 
-[badges]
-travis-ci = { repository = "slava-sh/rust-bundler" }
-codecov = { repository = "slava-sh/rust-bundler" }
-
 [[bin]]
 name = "bundle"
 path = "src/main.rs"
