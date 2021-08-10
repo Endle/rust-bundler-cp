@@ -131,7 +131,7 @@ jobs:
       # End of rust template
       - name: Install toolkit
         run: cargo install cargo-bump
-      - name: Check - Do we need to release
+      - name: Bump version - Add commit - Publish
         run: |
           which python3
           python3 --version
