@@ -36,6 +36,7 @@ jobs:
             ~/.cargo/git
           key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}-build
           restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}-
             ${{ runner.os }}-cargo-${{ matrix.rust }}-
             ${{ runner.os }}-cargo-
 
@@ -50,8 +51,6 @@ jobs:
         run: cargo build --verbose
       - name: Run tests
         run: cargo test --verbose
-      - name: Bench
-        run: cargo bench --verbose
       - name: Install
         run: cargo install --path .
       - name: Package
@@ -89,6 +88,7 @@ jobs:
             ~/.cargo/git
           key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}-release
           restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}-
             ${{ runner.os }}-cargo-${{ matrix.rust }}-
             ${{ runner.os }}-cargo-
 
