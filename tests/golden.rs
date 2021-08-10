@@ -1,4 +1,4 @@
-extern crate bundler;
+extern crate rust_bundler_cp;
 extern crate goldenfile;
 
 use std::io::Write;
@@ -26,7 +26,7 @@ fn golden(mint:&mut Mint, entry: std::io::Result<DirEntry> ) {
     let mut output_file = mint.new_goldenfile(output_name).expect(
         "new_goldenfile failed",
     );
-    let output = bundler::bundle(&input_path);
+    let output = rust_bundler_cp::bundle(&input_path);
     write!(output_file, "{}", output).expect("write! failed");
     output_file.flush().expect("flush failed");
 
