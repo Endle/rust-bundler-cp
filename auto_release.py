@@ -11,7 +11,6 @@ def shell_call(cmd:str):
 def bump_version():
     def extract_ver(s)->str:
         with_quotes = s.split("=")[1].strip()
-        print(with_quotes)
         wo_q = with_quotes.replace('"', '')
         return wo_q
 
