@@ -24,7 +24,7 @@ def bump_version():
 
 def main():
     branch_name = shell_call("git branch --show-current")
-    if branch_name not in ['master'] and branch_name != 'bump':
+    if branch_name not in ['master']:
         print("Current branch  ({})  is not for release. Exiting".format(branch_name))
     commit_log = shell_call("git log --name-status -1")
     if MESSAGE_FLAG in commit_log:
