@@ -110,9 +110,53 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Build And Coverage
-        run: ./coverage.sh
-      - uses: actions/upload-artifact@v2
+      - name: Install sccache (ubuntu-latest)
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          LINK: https://github.com/mozilla/sccache/releases/download
+          SCCACHE_VERSION: 0.2.13
+        run: |
+          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
+          mkdir -p $HOME/.local/bin
+          curl -L "$LINK/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
+          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          rm -rf $SCCACHE_FILE
+          echo "If this file is remained, the carge package step would fail due to uncommitted changes" > /dev/null
+      - name: Install Rust ${{ matrix.rust }}
+        uses: actions-rs/toolchain@v1
         with:
-          name: coverage
-          path: ./coverage/
+          toolchain: ${{ matrix.rust }}
+          profile: minimal
+          override: true
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-${{ matrix.rust }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      - name: Save sccache
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: ${{ matrix.sccache-path }}
+          key: ${{ runner.os }}-sccache-${{ hashFiles('**/Cargo.toml') }}-${{ matrix.rust }}
+          restore-keys: |
+            ${{ runner.os }}-sccache-
+      - name: Start sccache server
+        run: sccache --start-server
+      # End of rust template
+      - name: Install toolkit
+        run: cargo install cargo-bump
+      - name: Check - Do we need to release
+        run: |
+          if [ "master" == $(git branch --show-current) ]; then
+            echo "In master branch"
+          fi
+          which python3
+          python3 --version
+
