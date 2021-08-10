@@ -95,13 +95,18 @@ jobs:
       - name: Stop sccache server
         run: sccache --stop-server || true
 
-
-
-
-
-
   coverage:
-
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build And Coverage
+        run: ./coverage.sh
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage
+          path: ./coverage/
+  release:
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
