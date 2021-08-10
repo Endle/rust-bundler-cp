@@ -37,8 +37,8 @@ jobs:
           curl -L "$LINK/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
           mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-# If this file is remained, the carge package step would fail due to uncommitted changes
           rm -rf $SCCACHE_FILE
+          echo "If this file is remained, the carge package step would fail due to uncommitted changes" > /dev/null
       - name: Install sccache (macos-latest)
         if: matrix.os == 'macos-latest'
         run: |
