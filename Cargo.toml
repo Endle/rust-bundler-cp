@@ -1,5 +1,5 @@
 [package]
-name = "rust-bundler-cp"
+name = "rust_bundler_cp"
 version = "0.2.1"
 authors = ["Zhenbo Li <lizhenbo@yahoo.com>"]
 description = "Creates a single-source-file version of a Cargo package. This single file can be submitted for competitive programming then. Concentrating on codeforces.com now."
