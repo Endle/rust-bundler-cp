@@ -8,14 +8,14 @@ fn usage() {
         .with_args(&[] as &[&str])
         .fails()
         .stderr()
-        .contains("Usage: bundle")
+        .contains("Error! Input path have to be specified")
         .unwrap();
 }
 
 #[test]
 fn bundle_self() {
     Assert::main_binary()
-        .with_args(&["."])
+        .with_args(&["--input", "."])
         .stdout()
         .contains("pub fn bundle<")
         .stdout()
