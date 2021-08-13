@@ -20,9 +20,13 @@ fn bundle_self() {
 
 #[test]
 fn multiple_binaries() {
-    cli_bundle(&["--input", "testdata/input/multiple_binaries"],
+    for c in 'a'..='g' {
+        let binary = c.to_string();
+        cli_bundle(&["--input", "testdata/input/multiple_binaries", "-b", &binary],
                true,
                &["pub fn bundle<", "let code = bundle("])
+    }
+
 }
 
 fn cli_bundle(args: &[&str], success: bool, expect_output: &[&str]) -> () {
