@@ -23,7 +23,6 @@ fn multiple_binaries() {
     cli_bundle(&["--input", "testdata/input/multiple_binaries"],
                true,
                &["pub fn bundle<", "let code = bundle("])
-
 }
 
 fn cli_bundle(args: &[&str], success: bool, expect_output: &[&str]) -> () {
