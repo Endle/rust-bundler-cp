@@ -15,14 +15,12 @@ fn get_metadata<P: AsRef<Path>>(package_path: P) -> cargo_metadata::Metadata{
     let metadata = cmd.exec().unwrap();
     metadata
 }
-/// Creates a single-source-file version of a Cargo package.
-pub fn bundle<P: AsRef<Path>>(package_path: P) -> String {
+
+pub fn bundle_specific_binary<P: AsRef<Path>>(package_path: P, binary_selected:Option<String>) -> String {
     let metadata = get_metadata(package_path);
     let targets: &[cargo_metadata::Target] = &metadata.root_package().unwrap().targets;
-    let bins: Vec<_> = targets.iter().filter(|t| target_is(t, "bin")).collect();
-    assert!(bins.len() != 0, "no binary target found");
-    assert!(bins.len() == 1, "multiple binary targets not supported");
-    let bin = bins[0];
+    let bin = select_binary(targets, binary_selected);
+
     let libs: Vec<_> = targets.iter().filter(|t| target_is(t, "lib")).collect();
     assert!(libs.len() <= 1, "multiple library targets not supported");
     let lib = libs.get(0).unwrap_or(&bin);
@@ -39,6 +37,19 @@ pub fn bundle<P: AsRef<Path>>(package_path: P) -> String {
     }.visit_file_mut(&mut file);
     let code = file.into_token_stream().to_string();
     prettify(code)
+}
+
+fn select_binary(targets: &[cargo_metadata::Target], p1: Option<String>) -> &cargo_metadata::Target {
+    let bins: Vec<_> = targets.iter().filter(|t| target_is(t, "bin")).collect();
+    assert!(bins.len() != 0, "no binary target found");
+    assert!(bins.len() == 1, "multiple binary targets not supported");
+    let bin = bins[0];
+    bin
+}
+
+/// Creates a single-source-file version of a Cargo package.
+pub fn bundle<P: AsRef<Path>>(package_path: P) -> String {
+    bundle_specific_binary(package_path, None)
 }
 
 fn target_is(target: &cargo_metadata::Target, target_kind: &str) -> bool {
