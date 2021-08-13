@@ -10,20 +10,27 @@ fn main() {
         .about("Creates a single-source-file version of a Cargo package.")
         .arg("-i, --input=[PATH] 'REQUIRED. Path to a cargo directory' ")
         .arg("-o, --output=[FILE] 'If not specified, result would be written to STDIN'")
+        .arg("-b --binary=[NAME] 'If multiple [[bin]] defined in Cargo.toml, this field is required'")
         .get_matches();
 
 
     let path:String = match matches.value_of_t("input") {
-             // => println!("{}", x),
-            Err(_)       => {
-                eprintln!("Error! Input path have to be specified");
-                process::exit(1);
-            }
-            Ok(v) => v
+        Err(_)       => {
+            eprintln!("Error! Input path have to be specified");
+            process::exit(1);
+        }
+        Ok(v) => v
     };
     // eprintln!("Input path = {}", path);
 
-    let code = rust_bundler_cp::bundle(path);
+    let binary_selected = match matches.value_of_t("binary") {
+        Err(_)       => {
+            None
+        }
+        Ok(v) => Some(v)
+    };
+
+    let code = rust_bundler_cp::bundle_specific_binary(path, binary_selected);
 
     match matches.value_of_t("output") {
         Err(_)  => {
