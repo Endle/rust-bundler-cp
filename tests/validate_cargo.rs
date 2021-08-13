@@ -14,11 +14,17 @@ fn validate(path: DirEntry) {
     eprintln!("Building {:?}", &pathbuf);
 
 
-    // Command::new("cargo")
-    //     .current_dir(pathbuf)
-    //     .arg("build")
-    //     .arg("-v")
-    //     .output()
-    //     .expect("Cargo build failed");
+    let result = Command::new("cargo")
+        .current_dir(pathbuf)
+        .arg("build")
+        .arg("-v")
+        .output()
+        .expect("Cargo build failed");
+
+
+    let stdout = String::from_utf8(result.stdout).expect("Invalid str");
+    let stderr = String::from_utf8(result.stderr).expect("Invalid str");
+    assert!(stderr.contains("Finished dev [unoptimized + debuginfo]"));
+    eprintln!("stdout: {}\nstderr: {}", &stdout, &stderr);
 
 }

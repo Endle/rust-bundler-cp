@@ -12,7 +12,4 @@ name = "my_lib"
 [dev-dependencies]
 rand = "0.8.4"
 
-criterion = "0.3.4"
-[[bench]]
-name = "bench_algo"
-harness = false
+
