@@ -39,12 +39,27 @@ pub fn bundle_specific_binary<P: AsRef<Path>>(package_path: P, binary_selected:O
     prettify(code)
 }
 
-fn select_binary(targets: &[cargo_metadata::Target], p1: Option<String>) -> &cargo_metadata::Target {
+fn select_binary(targets: &[cargo_metadata::Target], select: Option<String>) -> &cargo_metadata::Target {
     let bins: Vec<_> = targets.iter().filter(|t| target_is(t, "bin")).collect();
-    assert!(bins.len() != 0, "no binary target found");
-    assert!(bins.len() == 1, "multiple binary targets not supported");
-    let bin = bins[0];
-    bin
+    assert_ne!(bins.len(), 0, "no binary target found");
+    println!("{:?}", select);
+
+    if select.is_none() {
+        // println!("{:?}", &bins);
+        if bins.len() != 1 {
+            panic!("If there are multiple binary targets, MUST SPECIFY which one to use");
+        }
+
+        return bins[0];
+    }
+    let binary_name = select.unwrap();
+    for bin in bins {
+        if bin.name.eq(&binary_name) {
+            return bin;
+        }
+    }
+    panic!("Can't find binary {}", binary_name);
+
 }
 
 /// Creates a single-source-file version of a Cargo package.

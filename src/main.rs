@@ -23,7 +23,7 @@ fn main() {
     };
     // eprintln!("Input path = {}", path);
 
-    let binary_selected = match matches.value_of_t("input") {
+    let binary_selected = match matches.value_of_t("binary") {
         Err(_)       => {
             None
         }
