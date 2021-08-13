@@ -1,6 +1,7 @@
 extern crate assert_cli;
 
 use assert_cli::Assert;
+use std::fs::{DirEntry, read_dir};
 
 #[test]
 fn usage() {
@@ -12,6 +13,14 @@ fn usage() {
 #[test]
 fn bundle_self() {
     cli_bundle(&["--input", "."],
+               true,
+               &["pub fn bundle<", "let code = bundle("])
+
+}
+
+#[test]
+fn multiple_binaries() {
+    cli_bundle(&["--input", "testdata/input/multiple_binaries"],
                true,
                &["pub fn bundle<", "let code = bundle("])
 
