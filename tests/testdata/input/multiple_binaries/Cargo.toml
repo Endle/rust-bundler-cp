@@ -7,6 +7,33 @@ edition = "2018"
 [lib]
 name = "my_lib"
 
+[[bin]]
+name = "main"
+path = "src/bin/main.rs"
+
+[[bin]]
+name = "a"
+path = "src/bin/a.rs"
+[[bin]]
+name = "b"
+path = "src/bin/b.rs"
+[[bin]]
+name = "c"
+path = "src/bin/c.rs"
+[[bin]]
+name = "d"
+path = "src/bin/d.rs"
+[[bin]]
+name = "e"
+path = "src/bin/e.rs"
+[[bin]]
+name = "f"
+path = "src/bin/f.rs"
+[[bin]]
+name = "g"
+path = "src/bin/g.rs"
+
+
 #[dependencies]
 
 [dev-dependencies]
