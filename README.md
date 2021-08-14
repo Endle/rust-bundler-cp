@@ -54,6 +54,7 @@ $ cargo install rust_bundler_cp
 Run:
 ```sh
 $ rust_bundler_cp --input path/to/project >output.rs
+$ rust_bundler_cp --input path/to/project --binary a
 ```
 
 
