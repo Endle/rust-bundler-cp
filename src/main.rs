@@ -4,8 +4,13 @@ use std::process;
 use clap::App;
 
 fn main() {
+    env_logger::builder()
+        .format_timestamp(None)
+        .format_target(false)
+        .init();
+
     let matches = App::new("rust_bundler_cp")
-        .version("0.2")
+        .version("0.3")
         .author("Zhenbo Li")
         .about("Creates a single-source-file version of a Cargo package.")
         .arg("-i, --input=[PATH] 'REQUIRED. Path to a cargo directory' ")
@@ -29,6 +34,8 @@ fn main() {
         }
         Ok(v) => Some(v)
     };
+
+
 
     let code = rust_bundler_cp::bundle_specific_binary(path, binary_selected);
 

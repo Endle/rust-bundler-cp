@@ -8,6 +8,10 @@ use syn::__private::ToTokens;
 use syn::punctuated::Punctuated;
 use syn::visit_mut::VisitMut;
 
+use log::{debug, error, log_enabled, info, Level};
+
+
+
 fn get_metadata<P: AsRef<Path>>(package_path: P) -> cargo_metadata::Metadata{
     let manifest_path = package_path.as_ref().join("Cargo.toml");
     let mut cmd = cargo_metadata::MetadataCommand::new();
@@ -22,13 +26,13 @@ pub fn bundle_specific_binary<P: AsRef<Path>>(package_path: P, binary_selected:O
     let bin = select_binary(targets, binary_selected);
     let lib = get_lib(targets, bin);
 
-    let base_path = Path::new(&lib.src_path)
-        .parent()
+    let base_path = Path::new(&lib.src_path).parent()
         .expect("lib.src_path has no parent");
     let crate_name = &lib.name;
-    eprintln!("expanding binary {:?}", bin.src_path);
-    let code = read_file(&Path::new(&bin.src_path)).expect("failed to read binary target source");
-    let mut file = syn::parse_file(&code).expect("failed to parse binary target source");
+
+    info!("Expanding binary {:?}", bin.src_path);
+    let syntax_tree = read_file(&Path::new(&bin.src_path)).expect("failed to read binary target source");
+    let mut file = syn::parse_file(&syntax_tree).expect("failed to parse binary target source");
     Expander {
         base_path,
         crate_name,
@@ -47,7 +51,6 @@ fn get_lib<'a>(targets: &'a [cargo_metadata::Target], bin: &'a cargo_metadata::T
 fn select_binary(targets: &[cargo_metadata::Target], select: Option<String>) -> &cargo_metadata::Target {
     let bins: Vec<_> = targets.iter().filter(|t| target_is(t, "bin")).collect();
     assert_ne!(bins.len(), 0, "no binary target found");
-    println!("{:?}", select);
 
     if select.is_none() {
         // println!("{:?}", &bins);
@@ -68,6 +71,7 @@ fn select_binary(targets: &[cargo_metadata::Target], select: Option<String>) -> 
 }
 
 /// Creates a single-source-file version of a Cargo package.
+#[deprecated]
 pub fn bundle<P: AsRef<Path>>(package_path: P) -> String {
     bundle_specific_binary(package_path, None)
 }
@@ -83,6 +87,7 @@ struct Expander<'a> {
 
 impl<'a> Expander<'a> {
     fn expand_items(&self, items: &mut Vec<syn::Item>) {
+        debug!("expand_items, count={}", items.len());
         self.expand_extern_crate(items);
         self.expand_use_path(items);
     }
@@ -90,9 +95,9 @@ impl<'a> Expander<'a> {
     fn expand_extern_crate(&self, items: &mut Vec<syn::Item>) {
         let mut new_items = vec![];
         for item in items.drain(..) {
-            if is_extern_crate(&item, self.crate_name) {
-                eprintln!(
-                    "expanding crate {} in {}",
+            if is_selected_extern_crate(&item, self.crate_name) {
+                info!(
+                    "expanding crate(lib.rs) {} in {}",
                     self.crate_name,
                     self.base_path.to_str().unwrap()
                 );
@@ -132,7 +137,7 @@ impl<'a> Expander<'a> {
             })
             .next()
             .expect("mod not found");
-        eprintln!("expanding mod {} in {}", name, base_path.to_str().unwrap());
+        info!("expanding mod {} in {}", name, base_path.to_str().unwrap());
         let mut file = syn::parse_file(&code).expect("failed to parse file");
         Expander {
             base_path,
@@ -154,7 +159,7 @@ impl<'a> Expander<'a> {
 
 impl<'a> VisitMut for Expander<'a> {
     fn visit_file_mut(&mut self, file: &mut syn::File) {
-        // eprintln!("File {:?}", file);
+        debug!("visit_file_mut");
         for it in &mut file.attrs {
             self.visit_attribute_mut(it)
         }
@@ -162,8 +167,8 @@ impl<'a> VisitMut for Expander<'a> {
         for it in &mut file.items {
             self.visit_item_mut(it)
         }
-        eprintln!("File attr {:?}=========", & file.attrs);
-        eprintln!("File items {:?}", & file.items);
+        // eprintln!("File attr {:?}=========", & file.attrs);
+        // eprintln!("File items {:?}", & file.items);
     }
 
     fn visit_item_mod_mut(&mut self, item: &mut syn::ItemMod) {
@@ -189,7 +194,7 @@ impl<'a> VisitMut for Expander<'a> {
     }
 }
 
-fn is_extern_crate(item: &syn::Item, crate_name: &str) -> bool {
+fn is_selected_extern_crate(item: &syn::Item, crate_name: &str) -> bool {
     if let syn::Item::ExternCrate(ref item) = *item {
         if item.ident == crate_name {
             return true;
