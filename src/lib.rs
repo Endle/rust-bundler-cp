@@ -8,7 +8,7 @@ use syn::__private::ToTokens;
 use syn::punctuated::Punctuated;
 use syn::visit_mut::VisitMut;
 
-use log::{debug, error, log_enabled, info, Level};
+use log::{debug, info};
 
 
 
@@ -155,11 +155,52 @@ impl<'a> Expander<'a> {
             path.segments = new_segments;
         }
     }
+
+
+}
+
+fn debug_str_items(items: &Vec<syn::Item>) -> String {
+    //HIGHLY TODO
+    let mut builder = simple_string_builder::Builder::new();
+    builder.append("len=");
+    // builder.append(items.len());
+    builder.append(items.len().to_string());
+    builder.append(" ");
+    // result += &*items.len().to_string();
+    for it in items {
+        builder.append(" / ");
+        builder.append(debug_str_item(it));
+    }
+    builder.try_to_string().unwrap()
+    // let mut result = String::new();
+
+    // result += "len=";
+}
+
+fn debug_str_item(it: &syn::Item) -> &str {
+    match it {
+        syn::Item::ExternCrate(e) => {
+            // eprintln!("{:?}", e); //TODO-> too hacky
+            return "extern_crate";
+        },
+        syn::Item::Use(e) => {
+            // eprintln!("{:?}", e); //TODO-> too hacky
+            return "use";
+        },
+        syn::Item::Fn(e) => {
+            // eprintln!("{:?}", e); //TODO-> too hacky
+            return "Fn";
+        },
+        _ => {
+            // eprintln!("{:?}", it); //TODO-> too hacky
+            return "Others";
+        }
+    }
 }
 
 impl<'a> VisitMut for Expander<'a> {
     fn visit_file_mut(&mut self, file: &mut syn::File) {
-        debug!("visit_file_mut");
+        debug!("Custom visit_file_mut, item: {}", debug_str_items(&file.items));
         for it in &mut file.attrs {
             self.visit_attribute_mut(it)
         }
