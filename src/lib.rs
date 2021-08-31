@@ -20,10 +20,8 @@ pub fn bundle_specific_binary<P: AsRef<Path>>(package_path: P, binary_selected:O
     let metadata = get_metadata(package_path);
     let targets: &[cargo_metadata::Target] = &metadata.root_package().unwrap().targets;
     let bin = select_binary(targets, binary_selected);
+    let lib = get_lib(targets, bin);
 
-    let libs: Vec<_> = targets.iter().filter(|t| target_is(t, "lib")).collect();
-    assert!(libs.len() <= 1, "multiple library targets not supported");
-    let lib = libs.get(0).unwrap_or(&bin);
     let base_path = Path::new(&lib.src_path)
         .parent()
         .expect("lib.src_path has no parent");
@@ -38,6 +36,13 @@ pub fn bundle_specific_binary<P: AsRef<Path>>(package_path: P, binary_selected:O
     let code = file.into_token_stream().to_string();
     prettify(code)
 }
+
+fn get_lib<'a>(targets: &'a [cargo_metadata::Target], bin: &'a cargo_metadata::Target) -> &'a cargo_metadata::Target {
+    let libs: Vec<_> = targets.iter().filter(|t| target_is(t, "lib")).collect();
+    assert!(libs.len() <= 1, "multiple library targets not supported");
+    libs.get(0).unwrap_or(&bin)
+}
+
 
 fn select_binary(targets: &[cargo_metadata::Target], select: Option<String>) -> &cargo_metadata::Target {
     let bins: Vec<_> = targets.iter().filter(|t| target_is(t, "bin")).collect();
@@ -149,6 +154,7 @@ impl<'a> Expander<'a> {
 
 impl<'a> VisitMut for Expander<'a> {
     fn visit_file_mut(&mut self, file: &mut syn::File) {
+        // eprintln!("File {:?}", file);
         for it in &mut file.attrs {
             self.visit_attribute_mut(it)
         }
@@ -156,6 +162,8 @@ impl<'a> VisitMut for Expander<'a> {
         for it in &mut file.items {
             self.visit_item_mut(it)
         }
+        eprintln!("File attr {:?}=========", & file.attrs);
+        eprintln!("File items {:?}", & file.items);
     }
 
     fn visit_item_mod_mut(&mut self, item: &mut syn::ItemMod) {
