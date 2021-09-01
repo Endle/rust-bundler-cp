@@ -160,53 +160,6 @@ impl<'a> Expander<'a> {
 
 }
 
-fn debug_str_items(items: &Vec<syn::Item>) -> String {
-    // let x = 5i32;
-    // let y = x.to_string();
-    //HIGHLY TODO
-    let mut builder = simple_string_builder::Builder::new();
-    builder.append("len=");
-    // builder.append(items.len());
-    builder.append(items.len().to_string());
-    builder.append(" ");
-    // result += &*items.len().to_string();
-    for it in items {
-        builder.append(" / ");
-        builder.append(debug_str_item(it));
-    }
-    builder.try_to_string().unwrap()
-    // let mut result = String::new();
-
-    // result += "len=";
-}
-
-fn debug_str_item(it: &syn::Item) -> String {
-    let refstr:&str = match it {
-        syn::Item::ExternCrate(e) => {
-            // eprintln!("{:?}", e); //TODO-> too hacky
-             "extern_crate"
-        },
-        syn::Item::Use(e) => {
-            // eprintln!("{:?}", e); //TODO-> too hacky
-             "use"
-        },
-        syn::Item::Fn(e) => {
-            // eprintln!("{:?}", e); //TODO-> too hacky
-             "Fn"
-        },
-        syn::Item::Mod(e) => {
-            e.ident.to_string();
-            eprintln!("{:?}", e); //TODO-> too hacky
-            // return "Mod(";
-            return format!("Mod ({})", e.ident.to_string());
-        },
-        _ => {
-            // eprintln!("{:?}", it); //TODO-> too hacky
-            "Others"
-        }
-    };
-    String::from(refstr)
-}
 
 impl<'a> VisitMut for Expander<'a> {
     fn visit_file_mut(&mut self, file: &mut syn::File) {
@@ -322,4 +275,55 @@ fn prettify(code: String) -> String {
     }
     let stdout = out.stdout;
     String::from_utf8(stdout).unwrap()
+}
+
+
+// Debug toolkits
+
+fn debug_str_items(items: &Vec<syn::Item>) -> String {
+    // let x = 5i32;
+    // let y = x.to_string();
+    //HIGHLY TODO
+    let mut builder = simple_string_builder::Builder::new();
+    builder.append("len=");
+    // builder.append(items.len());
+    builder.append(items.len().to_string());
+    builder.append(" ");
+    // result += &*items.len().to_string();
+    for it in items {
+        builder.append(" / ");
+        builder.append(debug_str_item(it));
+    }
+    builder.try_to_string().unwrap()
+    // let mut result = String::new();
+
+    // result += "len=";
+}
+
+fn debug_str_item(it: &syn::Item) -> String {
+    let refstr:&str = match it {
+        syn::Item::ExternCrate(_e) => {
+            // eprintln!("{:?}", e); //TODO-> too hacky
+            "extern_crate"
+        },
+        syn::Item::Use(_e) => {
+            // eprintln!("{:?}", e); //TODO-> too hacky
+            "use"
+        },
+        syn::Item::Fn(_e) => {
+            // eprintln!("{:?}", e); //TODO-> too hacky
+            "Fn"
+        },
+        syn::Item::Mod(e) => {
+            e.ident.to_string();
+            eprintln!("{:?}", e); //TODO-> too hacky
+            // return "Mod(";
+            return format!("Mod ({})", e.ident.to_string());
+        },
+        _ => {
+            // eprintln!("{:?}", it); //TODO-> too hacky
+            "Others"
+        }
+    };
+    String::from(refstr)
 }
