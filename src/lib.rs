@@ -104,6 +104,7 @@ impl<'a> Expander<'a> {
                 let code =
                     read_file(&self.base_path.join("lib.rs")).expect("failed to read lib.rs");
                 let lib = syn::parse_file(&code).expect("failed to parse lib.rs");
+                debug!("parsed lib: {}", debug_str_items(&lib.items));
                 new_items.extend(lib.items);
             } else {
                 new_items.push(item);
@@ -160,6 +161,8 @@ impl<'a> Expander<'a> {
 }
 
 fn debug_str_items(items: &Vec<syn::Item>) -> String {
+    // let x = 5i32;
+    // let y = x.to_string();
     //HIGHLY TODO
     let mut builder = simple_string_builder::Builder::new();
     builder.append("len=");
@@ -177,25 +180,32 @@ fn debug_str_items(items: &Vec<syn::Item>) -> String {
     // result += "len=";
 }
 
-fn debug_str_item(it: &syn::Item) -> &str {
-    match it {
+fn debug_str_item(it: &syn::Item) -> String {
+    let refstr:&str = match it {
         syn::Item::ExternCrate(e) => {
             // eprintln!("{:?}", e); //TODO-> too hacky
-            return "extern_crate";
+             "extern_crate"
         },
         syn::Item::Use(e) => {
             // eprintln!("{:?}", e); //TODO-> too hacky
-            return "use";
+             "use"
         },
         syn::Item::Fn(e) => {
             // eprintln!("{:?}", e); //TODO-> too hacky
-            return "Fn";
+             "Fn"
+        },
+        syn::Item::Mod(e) => {
+            e.ident.to_string();
+            eprintln!("{:?}", e); //TODO-> too hacky
+            // return "Mod(";
+            return format!("Mod ({})", e.ident.to_string());
         },
         _ => {
             // eprintln!("{:?}", it); //TODO-> too hacky
-            return "Others";
+            "Others"
         }
-    }
+    };
+    String::from(refstr)
 }
 
 impl<'a> VisitMut for Expander<'a> {
