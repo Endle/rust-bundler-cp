@@ -9,7 +9,7 @@ use syn::punctuated::Punctuated;
 use syn::visit_mut::VisitMut;
 
 use log::{debug, info};
-
+use std::collections::HashMap;
 
 
 fn get_metadata<P: AsRef<Path>>(package_path: P) -> cargo_metadata::Metadata{
@@ -20,7 +20,8 @@ fn get_metadata<P: AsRef<Path>>(package_path: P) -> cargo_metadata::Metadata{
     metadata
 }
 
-pub fn bundle_specific_binary<P: AsRef<Path>>(package_path: P, binary_selected:Option<String>) -> String {
+pub fn bundle_specific_binary<P: AsRef<Path>>(package_path: P, binary_selected:Option<String>,
+        bundler_config: HashMap<BundlerConfig, String>) -> String {
     let metadata = get_metadata(package_path);
     let targets: &[cargo_metadata::Target] = &metadata.root_package().unwrap().targets;
     let bin = select_binary(targets, binary_selected);
@@ -71,7 +72,7 @@ fn select_binary(targets: &[cargo_metadata::Target], select: Option<String>) -> 
 /// Creates a single-source-file version of a Cargo package.
 #[deprecated]
 pub fn bundle<P: AsRef<Path>>(package_path: P) -> String {
-    bundle_specific_binary(package_path, None)
+    bundle_specific_binary(package_path, None, HashMap::new())
 }
 
 fn target_is(target: &cargo_metadata::Target, target_kind: &str) -> bool {
@@ -172,6 +173,7 @@ impl<'a> VisitMut for Expander<'a> {
         for it in &mut file.attrs {
             self.visit_attribute_mut(it)
         }
+        debug!("{:?}", file);
         self.expand_items(&mut file.items);
         for it in &mut file.items {
             self.visit_item_mut(it)
@@ -331,4 +333,8 @@ fn debug_str_item(it: &syn::Item) -> String {
         }
     };
     String::from(refstr)
+}
+
+pub enum BundlerConfig {
+    RemoveUnusedModInLib,
 }

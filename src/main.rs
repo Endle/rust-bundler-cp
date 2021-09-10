@@ -2,6 +2,7 @@ extern crate rust_bundler_cp;
 
 use std::process;
 use clap::App;
+use std::collections::HashMap;
 
 fn main() {
     env_logger::builder()
@@ -37,7 +38,7 @@ fn main() {
 
 
 
-    let code = rust_bundler_cp::bundle_specific_binary(path, binary_selected);
+    let code = rust_bundler_cp::bundle_specific_binary(path, binary_selected, HashMap::new());
 
     match matches.value_of_t("output") {
         Err(_)  => {
