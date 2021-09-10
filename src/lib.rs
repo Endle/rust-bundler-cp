@@ -33,10 +33,11 @@ pub fn bundle_specific_binary<P: AsRef<Path>>(package_path: P, binary_selected:O
     info!("Expanding binary {:?}", bin.src_path);
     let syntax_tree = read_file(&Path::new(&bin.src_path)).expect("failed to read binary target source");
     let mut file = syn::parse_file(&syntax_tree).expect("failed to parse binary target source");
-    Expander {
+    let mut expander = Expander {
         base_path,
         crate_name,
-    }.visit_file_mut(&mut file);
+    };
+    expander.visit_file_mut(&mut file);
     let code = file.into_token_stream().to_string();
     prettify(code)
 }

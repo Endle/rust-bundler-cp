@@ -13,8 +13,8 @@ fn solve() -> Option<i32> {
 }
 
 fn main() {
-    let testcases: i32 = read!();
-    // let testcases = 1;
+    // let testcases: i32 = read!();
+    let testcases = 1;
     for _ in 0..testcases { solve_and_print(); }
 }
 
