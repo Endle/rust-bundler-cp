@@ -10,7 +10,7 @@ use syn::visit_mut::VisitMut;
 
 use log::{debug, info, error};
 use std::collections::{HashMap, HashSet};
-use syn::{File, ItemUse, UseTree};
+use syn::{File, ItemUse, UseTree, Item};
 
 
 fn get_metadata<P: AsRef<Path>>(package_path: P) -> cargo_metadata::Metadata{
@@ -114,16 +114,25 @@ impl<'a> Expander<'a> {
         let mut new_items = vec![];
         for item in items.drain(..) {
             if is_selected_extern_crate(&item, self.crate_name) {
-                info!(
-                    "expanding crate(lib.rs) {} in {}",
-                    self.crate_name,
-                    self.base_path.to_str().unwrap()
-                );
+                info!("expanding crate(lib.rs) {} in {}",
+                    self.crate_name, self.base_path.to_str().unwrap());
                 let code =
                     read_file(&self.base_path.join("lib.rs")).expect("failed to read lib.rs");
                 let lib = syn::parse_file(&code).expect("failed to parse lib.rs");
                 debug!("parsed lib: {}", debug_str_items(&lib.items));
-                new_items.extend(lib.items);
+                if self.remove_unused_mod_in_lib {
+                    debug!("Remove unused mod in lib.rs");
+                    for it in lib.items {
+                        if self.is_allowed(&it) {
+                            new_items.push(it);
+                        } else {
+                            debug!("mod {} has been skipped", it.to_token_stream().to_string());
+                        }
+                    }
+                } else {
+                    new_items.extend(lib.items);
+                }
+
             } else {
                 new_items.push(item);
             }
@@ -180,7 +189,7 @@ impl<'a> Expander<'a> {
         for it in &file.items {
             match it {
                 syn::Item::Use(e) => {
-                    let mods = extract_used_mods(&e.tree);
+                    let mods = extract_mods_name(&e.tree);
                     for x in mods {
                         self.allow_list_mod_in_lib.insert(x);
                     }
@@ -191,19 +200,32 @@ impl<'a> Expander<'a> {
         debug!("set_pub_mod_allow_list result: {:?}", &self.allow_list_mod_in_lib);
     }
 
+    fn is_allowed(&self, it: &Item) -> bool {
+        match it {
+            syn::Item::Mod(e) => {
+                let name = e.ident.to_string();
+                debug!("Checking if {:?} ({}) is_allowed", e, &name);
+                self.allow_list_mod_in_lib.contains(&name)
+                // true
+            },
+            _ => {
+                true
+            }
+        }
+    }
 }
 
-fn extract_used_mods(item: &UseTree) -> Vec<String> {
+fn extract_mods_name(item: &UseTree) -> Vec<String> {
     let mut result = Vec::new();
 
     match item {
         syn::UseTree::Path(p) => {
             //TODO should check  ident: Ident(my_lib) here
-            return extract_used_mods(&*p.tree)
+            return extract_mods_name(&*p.tree)
         },
         syn::UseTree::Group(g) => {
             for c in &g.items {
-                let mut mods = extract_used_mods(c);
+                let mut mods = extract_mods_name(c);
                 result.append(&mut mods);
                 // match c.first {
                 //     UseTree(e) => {
@@ -238,8 +260,7 @@ impl<'a> VisitMut for Expander<'a> {
         for it in &mut file.items {
             self.visit_item_mut(it)
         }
-        // eprintln!("File attr {:?}=========", & file.attrs);
-        // eprintln!("File items {:?}", & file.items);
+
     }
 
     fn visit_item_mod_mut(&mut self, item: &mut syn::ItemMod) {
@@ -383,7 +404,7 @@ fn debug_str_item(it: &syn::Item) -> String {
         },
         syn::Item::Mod(e) => {
             e.ident.to_string();
-            eprintln!("{:?}", e); //TODO-> too hacky
+            // eprintln!("{:?}", e); //TODO-> too hacky
             // return "Mod(";
             return format!("Mod ({})", e.ident.to_string());
         },
