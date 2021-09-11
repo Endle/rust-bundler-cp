@@ -8,9 +8,9 @@ use syn::__private::ToTokens;
 use syn::punctuated::Punctuated;
 use syn::visit_mut::VisitMut;
 
-use log::{debug, info};
+use log::{debug, info, error};
 use std::collections::{HashMap, HashSet};
-use syn::{File, ItemUse};
+use syn::{File, ItemUse, UseTree};
 
 
 fn get_metadata<P: AsRef<Path>>(package_path: P) -> cargo_metadata::Metadata{
@@ -180,7 +180,7 @@ impl<'a> Expander<'a> {
         for it in &file.items {
             match it {
                 syn::Item::Use(e) => {
-                    let mods = extract_used_mods(e);
+                    let mods = extract_used_mods(&e.tree);
                     for x in mods {
                         self.allow_list_mod_in_lib.insert(x);
                     }
@@ -188,15 +188,41 @@ impl<'a> Expander<'a> {
                 _ => ()
             }
         }
+        debug!("set_pub_mod_allow_list result: {:?}", &self.allow_list_mod_in_lib);
     }
 
 }
 
-fn extract_used_mods(item: &ItemUse) -> Vec<String> {
-    debug!("{:?}", item); //TODO-> too hacky
-
+fn extract_used_mods(item: &UseTree) -> Vec<String> {
     let mut result = Vec::new();
 
+    match item {
+        syn::UseTree::Path(p) => {
+            //TODO should check  ident: Ident(my_lib) here
+            return extract_used_mods(&*p.tree)
+        },
+        syn::UseTree::Group(g) => {
+            for c in &g.items {
+                let mut mods = extract_used_mods(c);
+                result.append(&mut mods);
+                // match c.first {
+                //     UseTree(e) => {
+                //         let mut mods = extract_used_mods(e);
+                //         result.append(&mut mods);
+                //     },
+                //     Comma=> ()
+                // }
+            }
+        },
+        syn::UseTree::Name(n) => {
+            result.push(n.ident.to_string());
+        },
+        _ => {
+            error!("Unexpected Tree element {:?}", item);
+        }
+    }
+
+    debug!("extract_used_mods: {:?}, result: {:?}", item, &result);
     return result;
 }
 
