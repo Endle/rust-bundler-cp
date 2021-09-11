@@ -10,7 +10,6 @@ use syn::visit_mut::VisitMut;
 
 use log::{debug, info, error};
 use std::collections::{HashMap, HashSet};
-use syn::{File, ItemUse, UseTree, Item};
 
 
 fn get_metadata<P: AsRef<Path>>(package_path: P) -> cargo_metadata::Metadata{
@@ -182,7 +181,7 @@ impl<'a> Expander<'a> {
         }
     }
 
-    fn set_pub_mod_allow_list(&mut self, file: &File) {
+    fn set_pub_mod_allow_list(&mut self, file: &syn::File) {
         debug!("set_pub_mod_allow_list");
 
         self.remove_unused_mod_in_lib = true;
@@ -200,7 +199,7 @@ impl<'a> Expander<'a> {
         debug!("set_pub_mod_allow_list result: {:?}", &self.allow_list_mod_in_lib);
     }
 
-    fn is_allowed(&self, it: &Item) -> bool {
+    fn is_allowed(&self, it: &syn::Item) -> bool {
         match it {
             syn::Item::Mod(e) => {
                 let name = e.ident.to_string();
@@ -215,7 +214,7 @@ impl<'a> Expander<'a> {
     }
 }
 
-fn extract_mods_name(item: &UseTree) -> Vec<String> {
+fn extract_mods_name(item: &syn::UseTree) -> Vec<String> {
     let mut result = Vec::new();
 
     match item {
