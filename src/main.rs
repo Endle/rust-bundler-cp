@@ -6,6 +6,8 @@ use std::collections::HashMap;
 
 use rust_bundler_cp::BundlerConfig;
 
+use log::{warn};
+
 fn main() {
     env_logger::builder()
         .format_timestamp(None)
@@ -19,6 +21,7 @@ fn main() {
         .arg("-i, --input=[PATH] 'REQUIRED. Path to a cargo directory' ")
         .arg("-o, --output=[FILE] 'If not specified, result would be written to STDIN'")
         .arg("-b --binary=[NAME] 'If multiple [[bin]] defined in Cargo.toml, this field is required'")
+        .arg("--remove_unused_mod 'If a pub mod statement in lib.rs is not used in selected bin, it would be removed EXPERIMENTAL!!'")
         .get_matches();
 
 
@@ -40,7 +43,12 @@ fn main() {
 
 
     let mut config: HashMap<BundlerConfig, String> = HashMap::new();
-    config.insert(BundlerConfig::RemoveUnusedModInLib, String::new());
+
+    if matches.is_present("remove_unused_mod") {
+        warn!("Experimental function remove_unused_mod enabled");
+        config.insert(BundlerConfig::RemoveUnusedModInLib, String::new());
+    }
+
     let code = rust_bundler_cp::bundle_specific_binary(path, binary_selected, config);
 
     match matches.value_of_t("output") {
