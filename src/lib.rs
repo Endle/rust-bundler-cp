@@ -340,6 +340,7 @@ fn debug_str_item(it: &syn::Item) -> String {
     String::from(refstr)
 }
 
+#[derive(PartialEq, Eq, Hash)]
 pub enum BundlerConfig {
     RemoveUnusedModInLib,
 }

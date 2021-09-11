@@ -4,6 +4,8 @@ use std::process;
 use clap::App;
 use std::collections::HashMap;
 
+use rust_bundler_cp::BundlerConfig;
+
 fn main() {
     env_logger::builder()
         .format_timestamp(None)
@@ -37,8 +39,9 @@ fn main() {
     };
 
 
-
-    let code = rust_bundler_cp::bundle_specific_binary(path, binary_selected, HashMap::new());
+    let mut config: HashMap<BundlerConfig, String> = HashMap::new();
+    config.insert(BundlerConfig::RemoveUnusedModInLib, String::new());
+    let code = rust_bundler_cp::bundle_specific_binary(path, binary_selected, config);
 
     match matches.value_of_t("output") {
         Err(_)  => {
