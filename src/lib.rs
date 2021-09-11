@@ -11,18 +11,11 @@ use syn::visit_mut::VisitMut;
 use log::{debug, info, error};
 use std::collections::{HashMap, HashSet};
 
-
-fn get_metadata<P: AsRef<Path>>(package_path: P) -> cargo_metadata::Metadata{
-    let manifest_path = package_path.as_ref().join("Cargo.toml");
-    let mut cmd = cargo_metadata::MetadataCommand::new();
-    cmd.manifest_path(&manifest_path);
-    let metadata = cmd.exec().unwrap();
-    metadata
-}
+mod cargo_loader;
 
 pub fn bundle_specific_binary<P: AsRef<Path>>(package_path: P, binary_selected:Option<String>,
         bundler_config: HashMap<BundlerConfig, String>) -> String {
-    let (bin, lib) = select_bin_and_lib(package_path, binary_selected);
+    let (bin, lib) = cargo_loader::select_bin_and_lib(package_path, binary_selected);
     let base_path = Path::new(&lib.src_path).parent()
         .expect("lib.src_path has no parent");
     let crate_name = &lib.name;
@@ -39,52 +32,10 @@ pub fn bundle_specific_binary<P: AsRef<Path>>(package_path: P, binary_selected:O
     prettify(code)
 }
 
-fn select_bin_and_lib<P: AsRef<Path>>(package_path: P, binary_selected:Option<String>) -> (cargo_metadata::Target, cargo_metadata::Target) {
-    let metadata = get_metadata(package_path);
-    let targets: &[cargo_metadata::Target] = &metadata.root_package().unwrap().targets;
-    let bin = select_binary(targets, binary_selected).clone();
-    let lib = get_lib(targets, &bin).clone();
-
-    (bin, lib)
-}
-
-fn get_lib<'a>(targets: &'a [cargo_metadata::Target], bin: &'a cargo_metadata::Target) -> &'a cargo_metadata::Target {
-    let libs: Vec<_> = targets.iter().filter(|t| target_is(t, "lib")).collect();
-    assert!(libs.len() <= 1, "multiple library targets not supported");
-    libs.get(0).unwrap_or(&bin)
-}
-
-
-fn select_binary(targets: &[cargo_metadata::Target], select: Option<String>) -> &cargo_metadata::Target {
-    let bins: Vec<_> = targets.iter().filter(|t| target_is(t, "bin")).collect();
-    assert_ne!(bins.len(), 0, "no binary target found");
-
-    if select.is_none() {
-        // println!("{:?}", &bins);
-        if bins.len() != 1 {
-            panic!("If there are multiple binary targets, MUST SPECIFY which one to use");
-        }
-
-        return bins[0];
-    }
-    let binary_name = select.unwrap();
-    for bin in bins {
-        if bin.name.eq(&binary_name) {
-            return bin;
-        }
-    }
-    panic!("Can't find binary {}", binary_name);
-
-}
-
 /// Creates a single-source-file version of a Cargo package.
 #[deprecated]
 pub fn bundle<P: AsRef<Path>>(package_path: P) -> String {
     bundle_specific_binary(package_path, None, HashMap::new())
-}
-
-fn target_is(target: &cargo_metadata::Target, target_kind: &str) -> bool {
-    target.kind.iter().any(|kind| kind == target_kind)
 }
 
 struct Expander<'a> {
@@ -226,13 +177,6 @@ fn extract_mods_name(item: &syn::UseTree) -> Vec<String> {
             for c in &g.items {
                 let mut mods = extract_mods_name(c);
                 result.append(&mut mods);
-                // match c.first {
-                //     UseTree(e) => {
-                //         let mut mods = extract_used_mods(e);
-                //         result.append(&mut mods);
-                //     },
-                //     Comma=> ()
-                // }
             }
         },
         syn::UseTree::Name(n) => {
@@ -244,7 +188,7 @@ fn extract_mods_name(item: &syn::UseTree) -> Vec<String> {
     }
 
     debug!("extract_used_mods: {}, result: {:?}", item.to_token_stream().to_string(), &result);
-    return result;
+    result
 }
 
 
@@ -367,7 +311,7 @@ fn prettify(code: String) -> String {
 
 // Debug toolkits
 
-fn debug_str_items(items: &Vec<syn::Item>) -> String {
+fn debug_str_items(items: &[syn::Item]) -> String {
     // let x = 5i32;
     // let y = x.to_string();
     //HIGHLY TODO
