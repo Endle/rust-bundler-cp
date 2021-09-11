@@ -55,11 +55,28 @@ jobs:
         run: cargo install --path .
       - name: Package
         run: cargo package --verbose
+      - name: clippy
+        if: runner.os == 'ubuntu-latest'
+        run: |
+          rustup component add clippy
+          cargo clippy
         
 
   coverage:
     runs-on: ubuntu-latest
     steps:
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}-coverage
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}-
+            ${{ runner.os }}-cargo-${{ matrix.rust }}-
+            ${{ runner.os }}-cargo-
       - uses: actions/checkout@v2
       - name: Build And Coverage
         run: ./coverage.sh
