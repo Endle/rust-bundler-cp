@@ -8,6 +8,10 @@ use syn::__private::ToTokens;
 use syn::punctuated::Punctuated;
 use syn::visit_mut::VisitMut;
 
+use log::{debug, info, error};
+use std::collections::{HashMap, HashSet};
+
+
 fn get_metadata<P: AsRef<Path>>(package_path: P) -> cargo_metadata::Metadata{
     let manifest_path = package_path.as_ref().join("Cargo.toml");
     let mut cmd = cargo_metadata::MetadataCommand::new();
@@ -16,33 +20,44 @@ fn get_metadata<P: AsRef<Path>>(package_path: P) -> cargo_metadata::Metadata{
     metadata
 }
 
-pub fn bundle_specific_binary<P: AsRef<Path>>(package_path: P, binary_selected:Option<String>) -> String {
-    let metadata = get_metadata(package_path);
-    let targets: &[cargo_metadata::Target] = &metadata.root_package().unwrap().targets;
-    let bin = select_binary(targets, binary_selected);
-
-    let libs: Vec<_> = targets.iter().filter(|t| target_is(t, "lib")).collect();
-    assert!(libs.len() <= 1, "multiple library targets not supported");
-    let lib = libs.get(0).unwrap_or(&bin);
-    let base_path = Path::new(&lib.src_path)
-        .parent()
+pub fn bundle_specific_binary<P: AsRef<Path>>(package_path: P, binary_selected:Option<String>,
+        bundler_config: HashMap<BundlerConfig, String>) -> String {
+    let (bin, lib) = select_bin_and_lib(package_path, binary_selected);
+    let base_path = Path::new(&lib.src_path).parent()
         .expect("lib.src_path has no parent");
     let crate_name = &lib.name;
-    eprintln!("expanding binary {:?}", bin.src_path);
-    let code = read_file(&Path::new(&bin.src_path)).expect("failed to read binary target source");
-    let mut file = syn::parse_file(&code).expect("failed to parse binary target source");
-    Expander {
-        base_path,
-        crate_name,
-    }.visit_file_mut(&mut file);
+
+    info!("Expanding binary {:?}", bin.src_path);
+    let syntax_tree = read_file(&Path::new(&bin.src_path)).expect("failed to read binary target source");
+    let mut file = syn::parse_file(&syntax_tree).expect("failed to parse binary target source");
+    let mut expander = Expander::new(base_path, crate_name);
+    if bundler_config.contains_key(&BundlerConfig::RemoveUnusedModInLib) {
+        expander.set_pub_mod_allow_list(&file);
+    }
+    expander.visit_file_mut(&mut file);
     let code = file.into_token_stream().to_string();
     prettify(code)
 }
 
+fn select_bin_and_lib<P: AsRef<Path>>(package_path: P, binary_selected:Option<String>) -> (cargo_metadata::Target, cargo_metadata::Target) {
+    let metadata = get_metadata(package_path);
+    let targets: &[cargo_metadata::Target] = &metadata.root_package().unwrap().targets;
+    let bin = select_binary(targets, binary_selected).clone();
+    let lib = get_lib(targets, &bin).clone();
+
+    (bin, lib)
+}
+
+fn get_lib<'a>(targets: &'a [cargo_metadata::Target], bin: &'a cargo_metadata::Target) -> &'a cargo_metadata::Target {
+    let libs: Vec<_> = targets.iter().filter(|t| target_is(t, "lib")).collect();
+    assert!(libs.len() <= 1, "multiple library targets not supported");
+    libs.get(0).unwrap_or(&bin)
+}
+
+
 fn select_binary(targets: &[cargo_metadata::Target], select: Option<String>) -> &cargo_metadata::Target {
     let bins: Vec<_> = targets.iter().filter(|t| target_is(t, "bin")).collect();
     assert_ne!(bins.len(), 0, "no binary target found");
-    println!("{:?}", select);
 
     if select.is_none() {
         // println!("{:?}", &bins);
@@ -63,8 +78,9 @@ fn select_binary(targets: &[cargo_metadata::Target], select: Option<String>) -> 
 }
 
 /// Creates a single-source-file version of a Cargo package.
+#[deprecated]
 pub fn bundle<P: AsRef<Path>>(package_path: P) -> String {
-    bundle_specific_binary(package_path, None)
+    bundle_specific_binary(package_path, None, HashMap::new())
 }
 
 fn target_is(target: &cargo_metadata::Target, target_kind: &str) -> bool {
@@ -74,10 +90,21 @@ fn target_is(target: &cargo_metadata::Target, target_kind: &str) -> bool {
 struct Expander<'a> {
     base_path: &'a Path,
     crate_name: &'a str,
+    remove_unused_mod_in_lib: bool,
+    allow_list_mod_in_lib: HashSet<String>,
 }
 
 impl<'a> Expander<'a> {
+    fn new(base_path: &'a Path, crate_name: &'a str) -> Expander<'a> {
+        Expander {
+            base_path,
+            crate_name,
+            remove_unused_mod_in_lib: false,
+            allow_list_mod_in_lib: HashSet::new(),
+        }
+    }
     fn expand_items(&self, items: &mut Vec<syn::Item>) {
+        debug!("expand_items, count={}", items.len());
         self.expand_extern_crate(items);
         self.expand_use_path(items);
     }
@@ -85,16 +112,26 @@ impl<'a> Expander<'a> {
     fn expand_extern_crate(&self, items: &mut Vec<syn::Item>) {
         let mut new_items = vec![];
         for item in items.drain(..) {
-            if is_extern_crate(&item, self.crate_name) {
-                eprintln!(
-                    "expanding crate {} in {}",
-                    self.crate_name,
-                    self.base_path.to_str().unwrap()
-                );
+            if is_selected_extern_crate(&item, self.crate_name) {
+                info!("expanding crate(lib.rs) {} in {}",
+                    self.crate_name, self.base_path.to_str().unwrap());
                 let code =
                     read_file(&self.base_path.join("lib.rs")).expect("failed to read lib.rs");
                 let lib = syn::parse_file(&code).expect("failed to parse lib.rs");
-                new_items.extend(lib.items);
+                debug!("parsed lib: {}", debug_str_items(&lib.items));
+                if self.remove_unused_mod_in_lib {
+                    debug!("Remove unused mod in lib.rs");
+                    for it in lib.items {
+                        if self.is_allowed(&it) {
+                            new_items.push(it);
+                        } else {
+                            debug!("mod {} has been skipped", it.to_token_stream().to_string());
+                        }
+                    }
+                } else {
+                    new_items.extend(lib.items);
+                }
+
             } else {
                 new_items.push(item);
             }
@@ -127,12 +164,10 @@ impl<'a> Expander<'a> {
             })
             .next()
             .expect("mod not found");
-        eprintln!("expanding mod {} in {}", name, base_path.to_str().unwrap());
+        info!("expanding mod {} in {}", name, base_path.to_str().unwrap());
         let mut file = syn::parse_file(&code).expect("failed to parse file");
-        Expander {
-            base_path,
-            crate_name: self.crate_name,
-        }.visit_file_mut(&mut file);
+        Expander::new(base_path, self.crate_name)
+            .visit_file_mut(&mut file);
         item.content = Some((Default::default(), file.items));
     }
 
@@ -145,17 +180,86 @@ impl<'a> Expander<'a> {
             path.segments = new_segments;
         }
     }
+
+    fn set_pub_mod_allow_list(&mut self, file: &syn::File) {
+        debug!("set_pub_mod_allow_list");
+
+        self.remove_unused_mod_in_lib = true;
+        for it in &file.items {
+            match it {
+                syn::Item::Use(e) => {
+                    let mods = extract_mods_name(&e.tree);
+                    for x in mods {
+                        self.allow_list_mod_in_lib.insert(x);
+                    }
+                },
+                _ => ()
+            }
+        }
+        debug!("set_pub_mod_allow_list result: {:?}", &self.allow_list_mod_in_lib);
+    }
+
+    fn is_allowed(&self, it: &syn::Item) -> bool {
+        match it {
+            syn::Item::Mod(e) => {
+                let name = e.ident.to_string();
+                debug!("Checking if {} ({}) is_allowed", e.to_token_stream().to_string(), &name);
+                self.allow_list_mod_in_lib.contains(&name)
+                // true
+            },
+            _ => {
+                true
+            }
+        }
+    }
 }
+
+fn extract_mods_name(item: &syn::UseTree) -> Vec<String> {
+    let mut result = Vec::new();
+
+    match item {
+        syn::UseTree::Path(p) => {
+            //TODO should check  ident: Ident(my_lib) here
+            return extract_mods_name(&*p.tree)
+        },
+        syn::UseTree::Group(g) => {
+            for c in &g.items {
+                let mut mods = extract_mods_name(c);
+                result.append(&mut mods);
+                // match c.first {
+                //     UseTree(e) => {
+                //         let mut mods = extract_used_mods(e);
+                //         result.append(&mut mods);
+                //     },
+                //     Comma=> ()
+                // }
+            }
+        },
+        syn::UseTree::Name(n) => {
+            result.push(n.ident.to_string());
+        },
+        _ => {
+            error!("Unexpected Tree element {}", item.to_token_stream().to_string());
+        }
+    }
+
+    debug!("extract_used_mods: {}, result: {:?}", item.to_token_stream().to_string(), &result);
+    return result;
+}
+
 
 impl<'a> VisitMut for Expander<'a> {
     fn visit_file_mut(&mut self, file: &mut syn::File) {
+        debug!("Custom visit_file_mut, item: {}", debug_str_items(&file.items));
         for it in &mut file.attrs {
             self.visit_attribute_mut(it)
         }
+        // debug!("{:?}", file);
         self.expand_items(&mut file.items);
         for it in &mut file.items {
             self.visit_item_mut(it)
         }
+
     }
 
     fn visit_item_mod_mut(&mut self, item: &mut syn::ItemMod) {
@@ -181,7 +285,7 @@ impl<'a> VisitMut for Expander<'a> {
     }
 }
 
-fn is_extern_crate(item: &syn::Item, crate_name: &str) -> bool {
+fn is_selected_extern_crate(item: &syn::Item, crate_name: &str) -> bool {
     if let syn::Item::ExternCrate(ref item) = *item {
         if item.ident == crate_name {
             return true;
@@ -258,4 +362,60 @@ fn prettify(code: String) -> String {
     }
     let stdout = out.stdout;
     String::from_utf8(stdout).unwrap()
+}
+
+
+// Debug toolkits
+
+fn debug_str_items(items: &Vec<syn::Item>) -> String {
+    // let x = 5i32;
+    // let y = x.to_string();
+    //HIGHLY TODO
+    let mut builder = simple_string_builder::Builder::new();
+    builder.append("len=");
+    // builder.append(items.len());
+    builder.append(items.len().to_string());
+    builder.append(" ");
+    // result += &*items.len().to_string();
+    for it in items {
+        builder.append(" / ");
+        builder.append(debug_str_item(it));
+    }
+    builder.try_to_string().unwrap()
+    // let mut result = String::new();
+
+    // result += "len=";
+}
+
+fn debug_str_item(it: &syn::Item) -> String {
+    let refstr:&str = match it {
+        syn::Item::ExternCrate(_e) => {
+            // eprintln!("{:?}", e); //TODO-> too hacky
+            "extern_crate"
+        },
+        syn::Item::Use(_e) => {
+            // eprintln!("{:?}", e); //TODO-> too hacky
+            "use"
+        },
+        syn::Item::Fn(_e) => {
+            // eprintln!("{:?}", e); //TODO-> too hacky
+            "Fn"
+        },
+        syn::Item::Mod(e) => {
+            e.ident.to_string();
+            // eprintln!("{:?}", e); //TODO-> too hacky
+            // return "Mod(";
+            return format!("Mod ({})", e.ident.to_string());
+        },
+        _ => {
+            // eprintln!("{:?}", it); //TODO-> too hacky
+            "Others"
+        }
+    };
+    String::from(refstr)
+}
+
+#[derive(PartialEq, Eq, Hash)]
+pub enum BundlerConfig {
+    RemoveUnusedModInLib,
 }
