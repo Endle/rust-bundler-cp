@@ -10,6 +10,7 @@ use syn::visit_mut::VisitMut;
 
 use log::{debug, info};
 use std::collections::HashMap;
+use syn::File;
 
 
 fn get_metadata<P: AsRef<Path>>(package_path: P) -> cargo_metadata::Metadata{
@@ -31,6 +32,9 @@ pub fn bundle_specific_binary<P: AsRef<Path>>(package_path: P, binary_selected:O
     let syntax_tree = read_file(&Path::new(&bin.src_path)).expect("failed to read binary target source");
     let mut file = syn::parse_file(&syntax_tree).expect("failed to parse binary target source");
     let mut expander = Expander::new(base_path, crate_name);
+    if bundler_config.contains_key(&BundlerConfig::RemoveUnusedModInLib) {
+        expander.set_pub_mod_allow_list(&file);
+    }
     expander.visit_file_mut(&mut file);
     let code = file.into_token_stream().to_string();
     prettify(code)
@@ -87,14 +91,17 @@ fn target_is(target: &cargo_metadata::Target, target_kind: &str) -> bool {
 struct Expander<'a> {
     base_path: &'a Path,
     crate_name: &'a str,
+    remove_unused_mod_in_lib: bool,
+    allow_list_mod_in_lib: Vec<String>,
 }
 
 impl<'a> Expander<'a> {
-    fn new(base_path: &'a Path,
-           crate_name: &'a str) -> Self {
+    fn new(base_path: &'a Path, crate_name: &'a str) -> Expander<'a> {
         Expander {
             base_path,
             crate_name,
+            remove_unused_mod_in_lib: false,
+            allow_list_mod_in_lib: Vec::new(),
         }
     }
     fn expand_items(&self, items: &mut Vec<syn::Item>) {
@@ -151,10 +158,8 @@ impl<'a> Expander<'a> {
             .expect("mod not found");
         info!("expanding mod {} in {}", name, base_path.to_str().unwrap());
         let mut file = syn::parse_file(&code).expect("failed to parse file");
-        Expander {
-            base_path,
-            crate_name: self.crate_name,
-        }.visit_file_mut(&mut file);
+        Expander::new(base_path, self.crate_name)
+            .visit_file_mut(&mut file);
         item.content = Some((Default::default(), file.items));
     }
 
@@ -168,6 +173,9 @@ impl<'a> Expander<'a> {
         }
     }
 
+    fn set_pub_mod_allow_list(&mut self, binary: &File) {
+        todo!()
+    }
 
 }
 
