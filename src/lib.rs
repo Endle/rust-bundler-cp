@@ -9,8 +9,8 @@ use syn::punctuated::Punctuated;
 use syn::visit_mut::VisitMut;
 
 use log::{debug, info};
-use std::collections::HashMap;
-use syn::File;
+use std::collections::{HashMap, HashSet};
+use syn::{File, ItemUse};
 
 
 fn get_metadata<P: AsRef<Path>>(package_path: P) -> cargo_metadata::Metadata{
@@ -92,7 +92,7 @@ struct Expander<'a> {
     base_path: &'a Path,
     crate_name: &'a str,
     remove_unused_mod_in_lib: bool,
-    allow_list_mod_in_lib: Vec<String>,
+    allow_list_mod_in_lib: HashSet<String>,
 }
 
 impl<'a> Expander<'a> {
@@ -101,7 +101,7 @@ impl<'a> Expander<'a> {
             base_path,
             crate_name,
             remove_unused_mod_in_lib: false,
-            allow_list_mod_in_lib: Vec::new(),
+            allow_list_mod_in_lib: HashSet::new(),
         }
     }
     fn expand_items(&self, items: &mut Vec<syn::Item>) {
@@ -173,10 +173,31 @@ impl<'a> Expander<'a> {
         }
     }
 
-    fn set_pub_mod_allow_list(&mut self, binary: &File) {
-        todo!()
+    fn set_pub_mod_allow_list(&mut self, file: &File) {
+        debug!("set_pub_mod_allow_list");
+
+        self.remove_unused_mod_in_lib = true;
+        for it in &file.items {
+            match it {
+                syn::Item::Use(e) => {
+                    let mods = extract_used_mods(e);
+                    for x in mods {
+                        self.allow_list_mod_in_lib.insert(x);
+                    }
+                },
+                _ => ()
+            }
+        }
     }
 
+}
+
+fn extract_used_mods(item: &ItemUse) -> Vec<String> {
+    debug!("{:?}", item); //TODO-> too hacky
+
+    let mut result = Vec::new();
+
+    return result;
 }
 
 
@@ -186,7 +207,7 @@ impl<'a> VisitMut for Expander<'a> {
         for it in &mut file.attrs {
             self.visit_attribute_mut(it)
         }
-        debug!("{:?}", file);
+        // debug!("{:?}", file);
         self.expand_items(&mut file.items);
         for it in &mut file.items {
             self.visit_item_mut(it)
