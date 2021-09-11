@@ -39,6 +39,7 @@ fn main() {
     };
 
 
+<<<<<<< HEAD
     let mut config: HashMap<BundlerConfig, String> = HashMap::new();
 
     if matches.is_present("remove_unused_mod") {
