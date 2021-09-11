@@ -21,9 +21,9 @@ cargo_metadata = "0.14.0"
 syn = { version = "1.0.75", features = ["full", "printing", "visit-mut"] }
 rustfmt-nightly = { version = "1.4.21", optional = true }
 simple-string-builder = "0.2.0"
-clap = "3.0.0-beta.2"
 env_logger = "0.9.0"
 log = "0.4.0"
+clap = "2.33"
 
 [dev-dependencies]
 goldenfile = "1.1.0"
