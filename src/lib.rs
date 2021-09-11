@@ -22,11 +22,7 @@ fn get_metadata<P: AsRef<Path>>(package_path: P) -> cargo_metadata::Metadata{
 
 pub fn bundle_specific_binary<P: AsRef<Path>>(package_path: P, binary_selected:Option<String>,
         bundler_config: HashMap<BundlerConfig, String>) -> String {
-    let metadata = get_metadata(package_path);
-    let targets: &[cargo_metadata::Target] = &metadata.root_package().unwrap().targets;
-    let bin = select_binary(targets, binary_selected);
-    let lib = get_lib(targets, bin);
-
+    let (bin, lib) = select_bin_and_lib(package_path, binary_selected);
     let base_path = Path::new(&lib.src_path).parent()
         .expect("lib.src_path has no parent");
     let crate_name = &lib.name;
@@ -38,6 +34,15 @@ pub fn bundle_specific_binary<P: AsRef<Path>>(package_path: P, binary_selected:O
     expander.visit_file_mut(&mut file);
     let code = file.into_token_stream().to_string();
     prettify(code)
+}
+
+fn select_bin_and_lib<P: AsRef<Path>>(package_path: P, binary_selected:Option<String>) -> (cargo_metadata::Target, cargo_metadata::Target) {
+    let metadata = get_metadata(package_path);
+    let targets: &[cargo_metadata::Target] = &metadata.root_package().unwrap().targets;
+    let bin = select_binary(targets, binary_selected).clone();
+    let lib = get_lib(targets, &bin).clone();
+
+    (bin, lib)
 }
 
 fn get_lib<'a>(targets: &'a [cargo_metadata::Target], bin: &'a cargo_metadata::Target) -> &'a cargo_metadata::Target {
