@@ -203,7 +203,7 @@ impl<'a> Expander<'a> {
         match it {
             syn::Item::Mod(e) => {
                 let name = e.ident.to_string();
-                debug!("Checking if {:?} ({}) is_allowed", e, &name);
+                debug!("Checking if {} ({}) is_allowed", e.to_token_stream().to_string(), &name);
                 self.allow_list_mod_in_lib.contains(&name)
                 // true
             },
@@ -239,11 +239,11 @@ fn extract_mods_name(item: &syn::UseTree) -> Vec<String> {
             result.push(n.ident.to_string());
         },
         _ => {
-            error!("Unexpected Tree element {:?}", item);
+            error!("Unexpected Tree element {}", item.to_token_stream().to_string());
         }
     }
 
-    debug!("extract_used_mods: {:?}, result: {:?}", item, &result);
+    debug!("extract_used_mods: {}, result: {:?}", item.to_token_stream().to_string(), &result);
     return result;
 }
 
