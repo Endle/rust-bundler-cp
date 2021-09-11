@@ -20,7 +20,7 @@ path = "src/main.rs"
 cargo_metadata = "0.12.1"
 syn = { version = "1.0.73", features = ["full", "printing", "visit-mut"] }
 rustfmt-nightly = { version = "1.4.21", optional = true }
-clap = "3.0.0-beta.2"
+clap = "2.33"
 
 [dev-dependencies]
 goldenfile = "1.1.0"
