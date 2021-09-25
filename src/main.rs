@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use rust_bundler_cp::BundlerConfig;
 
-use log::{warn};
+use log::warn;
 
 fn main() {
     env_logger::builder()
