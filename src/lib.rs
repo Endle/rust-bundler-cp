@@ -137,14 +137,11 @@ impl<'a> Expander<'a> {
 
         self.remove_unused_mod_in_lib = true;
         for it in &file.items {
-            match it {
-                syn::Item::Use(e) => {
-                    let mods = extract_mods_name(&e.tree);
-                    for x in mods {
-                        self.allow_list_mod_in_lib.insert(x);
-                    }
-                },
-                _ => ()
+            if let syn::Item::Use(e) = it {
+                let mods = extract_mods_name(&e.tree);
+                for x in mods {
+                    self.allow_list_mod_in_lib.insert(x);
+                }
             }
         }
         debug!("set_pub_mod_allow_list result: {:?}", &self.allow_list_mod_in_lib);
