@@ -2,10 +2,11 @@
 
 This project is based on [rust-bundler](https://github.com/slava-sh/rust-bundler/)
 
-Creates a single-source-file version of a Cargo package.
+Creates a single-source-file version of a Cargo package. It's designed for Competitive Programming like Codeforces.
 
 ## Features
 
+* Uses [Syn](https://docs.rs/syn/latest/syn/) to parse and manipulate a complete syntax tree, instead of doing replacement with regular expression.  
 * Replaces `extern crate my_lib;` in `main.rs` with the contents of `lib.rs`.
 * Expands `mod my_mod;` declarations into `mod my_mod { ... }` blocks.
 
