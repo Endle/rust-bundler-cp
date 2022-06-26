@@ -20,3 +20,10 @@ fn read_file(path: &Path) -> Option<String> {
     std::fs::File::open(path).ok()?.read_to_string(&mut buf).ok()?;
     Some(buf)
 }
+
+#[test]
+fn parse_pub_mod() {
+    let lib_rs_code = "pub mod algo;";
+    let lib = syn::parse_file(&lib_rs_code).expect("failed to parse lib.rs");
+    print!("parsed lib: {}", lib.items.len());
+}
