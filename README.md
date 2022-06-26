@@ -2,13 +2,16 @@
 
 This project is based on [rust-bundler](https://github.com/slava-sh/rust-bundler/)
 
-Creates a single-source-file version of a Cargo package.
+Creates a single-source-file version of a Cargo package. It's designed for Competitive Programming like Codeforces.
+
+I'm using [rust-bundler-cp](https://github.com/Endle/rust-bundler-cp) with my codeforces template <https://github.com/Endle/rust_codeforce_template>, 
 
 ## Features
 
+* Uses [Syn](https://docs.rs/syn/latest/syn/) to parse and manipulate a complete syntax tree, instead of doing replacement with regular expression.  
 * Replaces `extern crate my_lib;` in `main.rs` with the contents of `lib.rs`.
 * Expands `mod my_mod;` declarations into `mod my_mod { ... }` blocks.
-
+* [rustfmt](https://github.com/rust-lang/rustfmt) needs to be available in `PATH`, i.e. `dnf install rustfmt`. I'll consider bundle `rustfmt` in my code later.
 ## Example
 
 Input:

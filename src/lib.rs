@@ -1,4 +1,3 @@
-//! See [README.md](https://github.com/slava-sh/rust-bundler/blob/master/README.md)
 use std::io::Read;
 use std::mem;
 use std::path::Path;
@@ -66,9 +65,18 @@ impl<'a> Expander<'a> {
             if is_selected_extern_crate(&item, self.crate_name) {
                 info!("expanding crate(lib.rs) {} in {}",
                     self.crate_name, self.base_path.to_str().unwrap());
-                let code =
+                let lib_rs_code =
                     read_file(&self.base_path.join("lib.rs")).expect("failed to read lib.rs");
-                let lib = syn::parse_file(&code).expect("failed to parse lib.rs");
+                debug!("Loaded lib.rs: {}", lib_rs_code.len());
+                let lib = syn::parse_file(&lib_rs_code);
+                let lib = match lib {
+                    Ok(x) => x,
+                    Err(e) => {
+                        error!("syn lib failed {:?}", e);
+                        std::process::exit(1);
+                    }
+                };
+                // .expect("failed to parse lib.rs");
                 debug!("parsed lib: {}", debug_str_items(&lib.items));
                 if self.remove_unused_mod_in_lib {
                     debug!("Remove unused mod in lib.rs");
