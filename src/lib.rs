@@ -27,7 +27,7 @@ pub fn bundle_specific_binary<P: AsRef<Path>>(
     let syntax_tree =
         read_file(Path::new(&bin.src_path)).expect("failed to read binary target source");
     let mut file = syn::parse_file(&syntax_tree).expect("failed to parse binary target source");
-    let mut expander = Expander::new(base_path, crate_name);
+    let mut expander = Expander::new(base_path, "", crate_name);
     if bundler_config.contains_key(&BundlerConfig::RemoveUnusedModInLib) {
         expander.set_pub_mod_allow_list(&file);
     }
@@ -44,15 +44,17 @@ pub fn bundle<P: AsRef<Path>>(package_path: P) -> String {
 
 struct Expander<'a> {
     base_path: &'a Path,
+    parent_name: &'a str,
     crate_name: &'a str,
     remove_unused_mod_in_lib: bool,
     allow_list_mod_in_lib: HashSet<String>,
 }
 
 impl<'a> Expander<'a> {
-    fn new(base_path: &'a Path, crate_name: &'a str) -> Expander<'a> {
+    fn new(base_path: &'a Path, parent_name: &'a str, crate_name: &'a str) -> Expander<'a> {
         Expander {
             base_path,
+            parent_name,
             crate_name,
             remove_unused_mod_in_lib: false,
             allow_list_mod_in_lib: HashSet::new(),
@@ -120,9 +122,11 @@ impl<'a> Expander<'a> {
             return;
         }
         let name = item.ident.to_string();
+        let new_style_path = self.base_path.join(self.parent_name);
         let other_base_path = self.base_path.join(&name);
         let (base_path, code) = vec![
             (self.base_path, format!("{}.rs", name)),
+            (&new_style_path, format!("{}.rs", name)),
             (&other_base_path, String::from("mod.rs")),
         ]
         .into_iter()
@@ -133,7 +137,7 @@ impl<'a> Expander<'a> {
         .expect("mod not found");
         info!("expanding mod {} in {}", name, base_path.to_str().unwrap());
         let mut file = syn::parse_file(&code).expect("failed to parse file");
-        Expander::new(base_path, self.crate_name).visit_file_mut(&mut file);
+        Expander::new(base_path, name.as_str(), self.crate_name).visit_file_mut(&mut file);
         item.content = Some((Default::default(), file.items));
     }
 
@@ -312,6 +316,7 @@ fn prettify(code: String) -> String {
     use std::io::Write;
     use std::process;
     let mut command = process::Command::new("rustfmt")
+        .args(["--config", "newline_style=Unix"])
         .stdin(process::Stdio::piped())
         .stdout(process::Stdio::piped())
         .stderr(process::Stdio::piped())
