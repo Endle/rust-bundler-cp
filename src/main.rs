@@ -1,8 +1,8 @@
 extern crate rust_bundler_cp;
 
-use std::process;
 use clap::App;
 use std::collections::HashMap;
+use std::process;
 
 use rust_bundler_cp::BundlerConfig;
 
@@ -24,13 +24,12 @@ fn main() {
         .args_from_usage("--remove_unused_mod 'If a pub mod statement in lib.rs is not used in selected bin, it would be removed EXPERIMENTAL!!'")
         .get_matches();
 
-
     let path: String = match matches.value_of("input") {
         None => {
             eprintln!("Error! Input path have to be specified");
             process::exit(1);
         }
-        Some(v) => String::from(v)
+        Some(v) => String::from(v),
     };
 
     let binary_selected = match matches.value_of("binary") {
