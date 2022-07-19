@@ -1,5 +1,5 @@
 [package]
-name = "complicated"
+name = "import_mod_without_mod_rs"
 version = "0.1.0"
 authors = ["Slava Shklyaev <slava@slava.sh>"]
 edition = "2018"
