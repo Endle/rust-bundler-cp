@@ -35,8 +35,8 @@ fn main() {
     let binary_selected = match matches.value_of("binary") {
         None => None,
         Some(v) => Some(String::from(v))
-    };
 
+    };
 
     let mut config: HashMap<BundlerConfig, String> = HashMap::new();
 
