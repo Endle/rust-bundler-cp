@@ -311,6 +311,7 @@ fn prettify(code: String) -> String {
     use std::io::Write;
     use std::process;
     let mut command = process::Command::new("rustfmt")
+        .args(["--config", "newline_style=Unix"])
         .stdin(process::Stdio::piped())
         .stdout(process::Stdio::piped())
         .stderr(process::Stdio::piped())
