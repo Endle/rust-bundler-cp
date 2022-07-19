@@ -1,7 +1,7 @@
 [package]
 name = "import_mod_without_mod_rs"
 version = "0.1.0"
-authors = ["Slava Shklyaev <slava@slava.sh>"]
+authors = ["Michele Bianchi <michele.bianchi@embark-studios.com>"]
 edition = "2018"
 
 [lib]
