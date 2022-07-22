@@ -22,10 +22,6 @@ fn loop_test_cases() {
             eprintln!("Skip multiple_binaries");
             continue;
         }
-        if path_str.contains("no_mod_file") {
-            eprintln!("TODO for no_mod_file, Skip now");
-            continue;
-        }
 
         golden(&mut mint, path);
     }
