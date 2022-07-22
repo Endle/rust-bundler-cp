@@ -202,7 +202,10 @@ fn extract_mods_name(item: &syn::UseTree) -> Vec<String> {
             result.push(n.ident.to_string());
         },
         _ => {
-            error!("Unexpected Tree element {}", item.to_token_stream().to_string());
+            error!(
+                "Unexpected Tree element {}",
+                item.to_token_stream().to_string()
+            );
         }
     }
 
@@ -311,6 +314,7 @@ fn prettify(code: String) -> String {
     use std::io::Write;
     use std::process;
     let mut command = process::Command::new("rustfmt")
+        .args(["--config", "newline_style=Unix"])
         .stdin(process::Stdio::piped())
         .stdout(process::Stdio::piped())
         .stderr(process::Stdio::piped())
@@ -327,9 +331,9 @@ fn prettify(code: String) -> String {
             None => String::from("Error_Code_None")
         };
         let stderr = out.stderr;
-        let stderr = String::from_utf8(stderr)
-            .unwrap_or( String::from("Invalid stderr String") );
-       panic!("rustfmt failed, code={}\nstderr: {}", error_code, stderr);
+        let stderr =
+            String::from_utf8(stderr).unwrap_or_else(|_| "Invalid stderr String".to_string());
+        panic!("rustfmt failed, code={}\nstderr: {}", error_code, stderr);
     }
     let stdout = out.stdout;
     String::from_utf8(stdout).unwrap()
