@@ -410,7 +410,9 @@ pub enum BundlerConfig {
 
 
 
-
+/*
+The test cases below is also considered as documents and examples.
+*/
 
 #[cfg(test)]
 mod expander_test {
