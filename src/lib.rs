@@ -21,6 +21,7 @@ pub fn bundle_specific_binary<P: AsRef<Path>>(
     let base_path = Path::new(&lib.src_path)
         .parent()
         .expect("lib.src_path has no parent");
+    debug!("base_path {:?}", base_path);
     let crate_name = &lib.name;
 
     info!("Expanding binary {:?}", bin.src_path);
@@ -52,6 +53,7 @@ struct Expander<'a> {
 
 impl<'a> Expander<'a> {
     fn new(base_path: &'a Path, parent_name: &'a str, crate_name: &'a str) -> Expander<'a> {
+        //TODO Check if parameters are valid
         Expander {
             base_path,
             parent_name,
@@ -294,13 +296,21 @@ fn is_use_path(item: &syn::Item, first_segment: &str) -> bool {
     false
 }
 
+// TODO This is legacy code from old Rust. We have much better API now
+#[deprecated]
 fn read_file(path: &Path) -> Option<String> {
+    debug!("Trying to read {:?}", path);
+    let data = std::fs::read_to_string(path.to_str().expect("Invalid parameter"));
+    Some(data.unwrap())
+    /*
     let mut buf = String::new();
     std::fs::File::open(path)
         .ok()?
         .read_to_string(&mut buf)
         .ok()?;
     Some(buf)
+
+     */
 }
 
 #[cfg(feature = "inner_rustfmt")]
@@ -451,10 +461,13 @@ mod expander_test {
         let code = file.into_token_stream().to_string();
     }
 
+
+
     fn create_expander() -> Expander<'static> {
-        let base_path: &Path = Path::new("tests/testdata/input/rust_codeforce_template")
+        let base_path: &Path = Path::new("tests/testdata/input/rust_codeforce_template/src")
             .parent()
             .expect("lib.src_path has no parent");
+        assert_eq!("tests/testdata/input/rust_codeforce_template", base_path.to_str().unwrap());
         let crate_name = "my_lib";
         let mut expander = crate::Expander::new(base_path, "", crate_name);
         expander
