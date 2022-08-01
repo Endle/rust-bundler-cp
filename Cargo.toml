@@ -28,7 +28,6 @@ clap = "2.33"
 [dev-dependencies]
 goldenfile = "1.3.0"
 assert_cli = "0.6.3"
-env_logger = "*"
 
 [features]
 inner_rustfmt = ["rustfmt-nightly"]

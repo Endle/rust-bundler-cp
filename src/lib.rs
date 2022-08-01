@@ -75,14 +75,8 @@ impl<'a> Expander<'a> {
                     self.crate_name,
                     self.base_path.to_str().unwrap()
                 );
-                let lib_rs_code_path = &self.base_path.join("lib.rs");
-                let lib_rs_code: String = match read_file(lib_rs_code_path) {
-                    None => {
-                        error!("Reading lib.rs: {} failed", lib_rs_code_path.to_str().unwrap_or("None"));
-                        std::process::exit(1);
-                    }
-                    Some(x) => x
-                };
+                let lib_rs_code =
+                    read_file(&self.base_path.join("lib.rs")).expect("failed to read lib.rs");
                 debug!("Loaded lib.rs: {}", lib_rs_code.len());
                 let lib = syn::parse_file(&lib_rs_code);
                 let lib = match lib {
@@ -423,32 +417,17 @@ The test cases below is also considered as documents and examples.
 #[cfg(test)]
 mod expander_test {
     use std::path::Path;
-    use syn::__private::ToTokens;
-    use syn::visit_mut::VisitMut;
+    use syn::File;
     use crate::Expander;
 
 
 
     #[test]
     fn test_create() {
-        let _expander = create_expander();
-    }
-    #[test]
-    fn test_read_source_code() {
-        let _file = read_source_code();
-    }
-
-    #[test]
-    fn test_full_workflow() {
-        env_logger::builder()
-            .format_timestamp(None)
-            .format_target(false)
-            .init();
-
         let mut expander = create_expander();
+    }
+    fn test_read_source_code() {
         let mut file = read_source_code();
-        expander.visit_file_mut(&mut file);
-        let code = file.into_token_stream().to_string();
     }
 
     fn create_expander() -> Expander<'static> {
@@ -461,7 +440,7 @@ mod expander_test {
     }
 
 
-    fn read_source_code () -> syn::File {
+    fn read_source_code () -> File {
         let src_path = "tests/testdata/input/rust_codeforce_template/src/main.rs";
         let syntax_tree =
             crate::read_file(Path::new(src_path)).expect("failed to read binary target source");
