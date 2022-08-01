@@ -398,18 +398,6 @@ pub enum BundlerConfig {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 /*
 The test cases below is also considered as documents and examples.
 */
@@ -426,11 +414,13 @@ mod expander_test {
     fn test_create() {
         let mut expander = create_expander();
     }
+    #[test]
     fn test_read_source_code() {
         let mut file = read_source_code();
     }
 
     fn create_expander() -> Expander<'static> {
+        // TODO This path seems to be wrong
         let base_path: &Path = Path::new("tests/testdata/input/rust_codeforce_template")
             .parent()
             .expect("lib.src_path has no parent");
