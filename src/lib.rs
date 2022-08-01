@@ -396,3 +396,31 @@ fn debug_str_item(it: &syn::Item) -> String {
 pub enum BundlerConfig {
     RemoveUnusedModInLib,
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(test)]
+mod expander_test {
+    #[test]
+    fn create() {
+        let base_path = "tests/testdata/input/rust_codeforce_template";
+        let base_path = std::path::Path::new(&base_path)
+            .parent()
+            .expect("lib.src_path has no parent");
+        let crate_name = "my_lib";
+        let mut expander = crate::Expander::new(base_path, "", crate_name);
+    }
+}
