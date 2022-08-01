@@ -414,13 +414,35 @@ pub enum BundlerConfig {
 
 #[cfg(test)]
 mod expander_test {
+    use std::path::Path;
+    use syn::File;
+    use crate::Expander;
+
+
+
     #[test]
-    fn create() {
-        let base_path = "tests/testdata/input/rust_codeforce_template";
-        let base_path = std::path::Path::new(&base_path)
+    fn test_create() {
+        let mut expander = create_expander();
+    }
+    fn test_read_source_code() {
+        let mut file = read_source_code();
+    }
+
+    fn create_expander() -> Expander<'static> {
+        let base_path: &Path = Path::new("tests/testdata/input/rust_codeforce_template")
             .parent()
             .expect("lib.src_path has no parent");
         let crate_name = "my_lib";
         let mut expander = crate::Expander::new(base_path, "", crate_name);
+        expander
+    }
+
+
+    fn read_source_code () -> File {
+        let src_path = "tests/testdata/input/rust_codeforce_template/src/main.rs";
+        let syntax_tree =
+            crate::read_file(Path::new(src_path)).expect("failed to read binary target source");
+        let mut file = syn::parse_file(&syntax_tree).expect("failed to parse binary target source");
+        file
     }
 }
