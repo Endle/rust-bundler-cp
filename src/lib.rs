@@ -27,7 +27,7 @@ pub fn bundle_specific_binary<P: AsRef<Path>>(
     let syntax_tree =
         read_file(Path::new(&bin.src_path)).expect("failed to read binary target source");
     let mut file = syn::parse_file(&syntax_tree).expect("failed to parse binary target source");
-    let mut expander = Expander::new(base_path, crate_name);
+    let mut expander = Expander::new(base_path, "", crate_name);
     if bundler_config.contains_key(&BundlerConfig::RemoveUnusedModInLib) {
         expander.set_pub_mod_allow_list(&file);
     }
@@ -44,15 +44,17 @@ pub fn bundle<P: AsRef<Path>>(package_path: P) -> String {
 
 struct Expander<'a> {
     base_path: &'a Path,
+    parent_name: &'a str,
     crate_name: &'a str,
     remove_unused_mod_in_lib: bool,
     allow_list_mod_in_lib: HashSet<String>,
 }
 
 impl<'a> Expander<'a> {
-    fn new(base_path: &'a Path, crate_name: &'a str) -> Expander<'a> {
+    fn new(base_path: &'a Path, parent_name: &'a str, crate_name: &'a str) -> Expander<'a> {
         Expander {
             base_path,
+            parent_name,
             crate_name,
             remove_unused_mod_in_lib: false,
             allow_list_mod_in_lib: HashSet::new(),
@@ -120,9 +122,11 @@ impl<'a> Expander<'a> {
             return;
         }
         let name = item.ident.to_string();
+        let new_style_path = self.base_path.join(self.parent_name);
         let other_base_path = self.base_path.join(&name);
         let (base_path, code) = vec![
             (self.base_path, format!("{}.rs", name)),
+            (&new_style_path, format!("{}.rs", name)),
             (&other_base_path, String::from("mod.rs")),
         ].into_iter()
             .flat_map(|(base_path, file_name)| {
@@ -132,8 +136,7 @@ impl<'a> Expander<'a> {
             .expect("mod not found");
         info!("expanding mod {} in {}", name, base_path.to_str().unwrap());
         let mut file = syn::parse_file(&code).expect("failed to parse file");
-        Expander::new(base_path, self.crate_name)
-            .visit_file_mut(&mut file);
+        Expander::new(base_path, name.as_str(), self.crate_name).visit_file_mut(&mut file);
         item.content = Some((Default::default(), file.items));
     }
 
@@ -392,4 +395,46 @@ fn debug_str_item(it: &syn::Item) -> String {
 #[derive(PartialEq, Eq, Hash)]
 pub enum BundlerConfig {
     RemoveUnusedModInLib,
+}
+
+
+/*
+The test cases below is also considered as documents and examples.
+*/
+
+#[cfg(test)]
+mod expander_test {
+    use std::path::Path;
+    use syn::File;
+    use crate::Expander;
+
+
+
+    #[test]
+    fn test_create() {
+        let mut expander = create_expander();
+    }
+    #[test]
+    fn test_read_source_code() {
+        let mut file = read_source_code();
+    }
+
+    fn create_expander() -> Expander<'static> {
+        // TODO This path seems to be wrong
+        let base_path: &Path = Path::new("tests/testdata/input/rust_codeforce_template")
+            .parent()
+            .expect("lib.src_path has no parent");
+        let crate_name = "my_lib";
+        let mut expander = crate::Expander::new(base_path, "", crate_name);
+        expander
+    }
+
+
+    fn read_source_code () -> File {
+        let src_path = "tests/testdata/input/rust_codeforce_template/src/main.rs";
+        let syntax_tree =
+            crate::read_file(Path::new(src_path)).expect("failed to read binary target source");
+        let mut file = syn::parse_file(&syntax_tree).expect("failed to parse binary target source");
+        file
+    }
 }
