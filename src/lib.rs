@@ -21,7 +21,7 @@ pub fn bundle_specific_binary<P: AsRef<Path>>(
     let base_path = Path::new(&lib.src_path)
         .parent()
         .expect("lib.src_path has no parent");
-    let crate_name = &lib.name;
+    let crate_name = &lib.name.replace("-", "_");
 
     info!("Expanding binary {:?}", bin.src_path);
     let syntax_tree =
