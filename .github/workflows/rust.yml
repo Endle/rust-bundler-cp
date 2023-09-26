@@ -117,6 +117,11 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest]
+        rust: [stable]
     steps:
       - uses: actions/checkout@v2
       - name: Install Rust ${{ matrix.rust }}
