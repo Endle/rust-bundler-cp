@@ -9,6 +9,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  SCCACHE_GHA_ENABLED: "true"
+  RUSTC_WRAPPER: "sccache"
 
 jobs:
   build:
@@ -157,6 +159,8 @@ jobs:
           git branch --show-current
           python3 --version
           python3 bump_version.py
+      - name: Push to GitHub
+        run: git push origin master
       # - name: Push to Github and crates
       #   env:
       #     CRATES_SECRET: ${{ secrets.CRATES_ENDLE }}
