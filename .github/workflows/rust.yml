@@ -77,6 +77,11 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        rust: [stable]
     steps:
       - uses: actions/checkout@v2
       - name: Install Rust ${{ matrix.rust }}
