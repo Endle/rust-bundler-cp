@@ -1,6 +1,6 @@
-# rust-bundler-cp
+#  [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua) rust-bundler-cp
 
-[![dependency status](https://deps.rs/repo/github/Endle/rust-bundler-cp/status.svg)](https://deps.rs/repo/github/Endle/rust-bundler-cp)
+
 
 This project is based on [rust-bundler](https://github.com/slava-sh/rust-bundler/)
 
