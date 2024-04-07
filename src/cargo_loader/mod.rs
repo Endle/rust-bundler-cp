@@ -1,11 +1,16 @@
 use std::path::Path;
+use log::error;
 
 pub fn select_bin_and_lib<P: AsRef<Path>>(package_path: P, binary_selected:Option<String>) -> (cargo_metadata::Target, cargo_metadata::Target) {
     let metadata = get_metadata(package_path);
-    let targets: &[cargo_metadata::Target] = &metadata.root_package().unwrap().targets;
+    let root_package = metadata.root_package().unwrap();
+    let targets: &[cargo_metadata::Target] = &root_package.targets;
     let bin = select_binary(targets, binary_selected).clone();
     let lib = get_lib(targets, &bin).clone();
 
+    if root_package.dependencies.len() > 0 {
+        error!("Unsupported: {} has more than one dependency", &root_package.name);
+    }
     (bin, lib)
 }
 

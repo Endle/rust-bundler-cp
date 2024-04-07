@@ -14,6 +14,7 @@ Creates a single-source-file version of a Cargo package. It's designed for Compe
 * Replaces `extern crate my_lib;` in `main.rs` with the contents of `lib.rs`.
 * Expands `mod my_mod;` declarations into `mod my_mod { ... }` blocks.
 * [rustfmt](https://github.com/rust-lang/rustfmt) needs to be available in `PATH`, i.e. `dnf install rustfmt`. I'll consider bundle `rustfmt` in my code later.
+* Unsupported: External `[dependencies]` in `Cargo.toml`  
 
 ## Example
  
