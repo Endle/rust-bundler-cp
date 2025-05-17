@@ -17,7 +17,7 @@ name = "rust_bundler_cp"
 path = "src/main.rs"
 
 [dependencies]
-cargo_metadata = "0.18.1"
+cargo_metadata = "0.19.2"
 syn = { version = "1.0.97", features = ["full", "parsing", "printing", "visit-mut"] }
 rustfmt-nightly = { version = "1.4.21", optional = true }
 simple-string-builder = "0.2.0"

@@ -1,5 +1,4 @@
 use std::path::Path;
-use log::error;
 
 pub fn select_bin_and_lib<P: AsRef<Path>>(package_path: P, binary_selected:Option<String>) -> (cargo_metadata::Target, cargo_metadata::Target) {
     let metadata = get_metadata(package_path);
@@ -8,8 +7,10 @@ pub fn select_bin_and_lib<P: AsRef<Path>>(package_path: P, binary_selected:Optio
     let bin = select_binary(targets, binary_selected).clone();
     let lib = get_lib(targets, &bin).clone();
 
-    if root_package.dependencies.len() > 0 {
-        error!("Unsupported: {} has more than one dependency", &root_package.name);
+    for dependency in &root_package.dependencies {
+        if dependency.kind == cargo_metadata::DependencyKind::Normal {
+            panic!("Rust code should not have dependencies {:?}", dependency);
+        }
     }
     (bin, lib)
 }
@@ -22,7 +23,7 @@ fn get_metadata<P: AsRef<Path>>(package_path: P) -> cargo_metadata::Metadata{
 }
 
 fn select_binary(targets: &[cargo_metadata::Target], select: Option<String>) -> &cargo_metadata::Target {
-    let bins: Vec<_> = targets.iter().filter(|t| target_is(t, "bin")).collect();
+    let bins: Vec<_> = targets.iter().filter(|t| t.is_bin()).collect();
     assert_ne!(bins.len(), 0, "no binary target found");
 
     if select.is_none() {
@@ -42,12 +43,8 @@ fn select_binary(targets: &[cargo_metadata::Target], select: Option<String>) -> 
     panic!("Can't find binary {}", binary_name);
 }
 
-fn target_is(target: &cargo_metadata::Target, target_kind: &str) -> bool {
-    target.kind.iter().any(|kind| kind == target_kind)
-}
-
 fn get_lib<'a>(targets: &'a [cargo_metadata::Target], bin: &'a cargo_metadata::Target) -> &'a cargo_metadata::Target {
-    let libs: Vec<_> = targets.iter().filter(|t| target_is(t, "lib")).collect();
+    let libs: Vec<_> = targets.iter().filter(|t| t.is_lib()).collect();
     assert!(libs.len() <= 1, "multiple library targets not supported");
     libs.get(0).unwrap_or(&bin)
 }

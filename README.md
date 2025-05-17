@@ -36,7 +36,7 @@ $ rust_bundler_cp --input path/to/project --binary a
 
 
 ## Similar Projects
-* This project is based on [slava-sh /rust-bundler](https://github.com/slava-sh/rust-bundler)
+* This project is based on [slava-sh/rust-bundler](https://github.com/slava-sh/rust-bundler)
 * [lpenz/rust-sourcebundler](https://github.com/lpenz/rust-sourcebundler)
   is based on regular expressions, whereas this project manipulates the syntax tree
 * [MarcosCosmos/cg-rust-bundler](https://github.com/MarcosCosmos/cg-rust-bundler)
